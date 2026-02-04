@@ -5,7 +5,12 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "test": "node test",
+    "lint": "eslint --fix",
+    "format": "prettier --write .",
+    "check": "prettier --write . && eslint --fix",
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",
@@ -16,8 +21,14 @@
     "postgres": "^3.4.5"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@types/eslint__js": "^8.42.3",
     "@types/node": "^22.10.2",
+    "eslint": "^9.39.2",
+    "eslint-plugin-unused-imports": "^4.3.0",
+    "prettier": "^3.8.1",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.54.0"
   }
 }
