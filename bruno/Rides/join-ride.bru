@@ -1,0 +1,42 @@
+meta {
+  name: Join Ride
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/rides/:id/join
+  body: json
+  auth: bearer
+}
+
+params:path {
+  id: ride-id-here
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {}
+}
+
+docs {
+  # Join Ride
+  
+  Adds the current user to a ride. Leaders and admins can also add other users.
+  
+  ## Path Parameters
+  - `id`: The ride ID
+  
+  ## Request Body (optional)
+  - `userId` (optional): User ID to add. If omitted, adds the authenticated user.
+  
+  ## Authentication
+  Required - Bearer token.
+  
+  ## Permissions
+  - Users can join themselves
+  - Leaders and admins can add other users by specifying `userId`
+}

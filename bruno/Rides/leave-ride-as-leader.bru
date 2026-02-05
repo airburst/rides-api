@@ -1,0 +1,40 @@
+meta {
+  name: Leave Ride (Remove Another User)
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/rides/:id/leave
+  body: json
+  auth: bearer
+}
+
+params:path {
+  id: ride-id-here
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "userId": "user-id-to-remove"
+  }
+}
+
+docs {
+  # Leave Ride (Remove Another User)
+
+  Leaders and admins can use this to remove another user from a ride.
+
+  ## Path Parameters
+  - `id`: The ride ID
+
+  ## Request Body
+  - `userId`: The user ID to remove from the ride
+
+  ## Authentication
+  Required - Bearer token with LEADER or ADMIN role.
+}

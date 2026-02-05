@@ -1,0 +1,24 @@
+meta {
+  name: Get Current User
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/users/me
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+docs {
+  # Get Current User
+
+  Returns the profile of the currently authenticated user.
+
+  ## Authentication
+  Required - Bearer token.
+}

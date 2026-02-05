@@ -1,0 +1,27 @@
+meta {
+  name: Get Ride
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/rides/:id
+  body: none
+  auth: none
+}
+
+params:path {
+  id: e8088c67-c29e-40b6-bfb5-7b7d48fd45f2
+}
+
+docs {
+  # Get Ride
+  
+  Returns details for a specific ride, including the list of users who have joined.
+  
+  ## Path Parameters
+  - `id`: The ride ID
+  
+  ## Authentication
+  Optional - works with or without authentication.
+}

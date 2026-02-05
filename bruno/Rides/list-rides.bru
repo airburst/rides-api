@@ -1,0 +1,29 @@
+meta {
+  name: List Rides
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/rides?start=2026-02-01&end=2026-02-04
+  body: none
+  auth: none
+}
+
+params:query {
+  start: 2026-02-01
+  end: 2026-02-04
+}
+
+docs {
+  # List Rides
+  
+  Returns a list of rides within the specified date range.
+  
+  ## Query Parameters
+  - `start` (optional): Start date filter (YYYY-MM-DD). Defaults to today.
+  - `end` (optional): End date filter (YYYY-MM-DD). Defaults to 2099-12-31.
+  
+  ## Authentication
+  Optional - works with or without authentication.
+}

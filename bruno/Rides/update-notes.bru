@@ -1,0 +1,45 @@
+meta {
+  name: Update Notes
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{baseUrl}}/rides/:id/notes
+  body: json
+  auth: bearer
+}
+
+params:path {
+  id: ride-id-here
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "notes": "I'll bring snacks!"
+  }
+}
+
+docs {
+  # Update Notes
+
+  Updates the user's notes for a specific ride.
+
+  ## Path Parameters
+  - `id`: The ride ID
+
+  ## Request Body
+  - `notes`: The new notes text
+  - `userId` (optional): User ID whose notes to update. Only for leaders/admins.
+
+  ## Authentication
+  Required - Bearer token.
+
+  ## Permissions
+  - Users can update their own notes
+  - Leaders and admins can update other users' notes by specifying `userId`
+}
