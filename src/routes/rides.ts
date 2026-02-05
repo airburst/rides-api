@@ -140,3 +140,41 @@ ridesRouter.post("/:id/leave", authMiddleware, async (c) => {
     return c.json({ error: "Failed to leave ride" }, 500);
   }
 });
+
+// PATCH /rides/:id/notes - Update user's notes for a ride
+ridesRouter.patch("/:id/notes", authMiddleware, async (c) => {
+  const rideId = c.req.param("id");
+  const user = c.get("user");
+
+  let body: { notes?: string; userId?: string } = {};
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid request body" }, 400);
+  }
+
+  const targetUserId = body.userId ?? user.id;
+  const isSelf = targetUserId === user.id;
+  const isLeaderOrAdmin = ["LEADER", "ADMIN"].includes(user.role);
+
+  // Users can update their own notes, leaders/admins can update others
+  if (!isSelf && !isLeaderOrAdmin) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  try {
+    await db
+      .update(userOnRides)
+      .set({ notes: body.notes ?? "" })
+      .where(
+        and(
+          eq(userOnRides.rideId, rideId),
+          eq(userOnRides.userId, targetUserId),
+        ),
+      );
+    return c.json({ success: true });
+  } catch (error) {
+    console.error("Update notes error:", error);
+    return c.json({ error: "Failed to update notes" }, 500);
+  }
+});
