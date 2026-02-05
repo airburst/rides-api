@@ -13,7 +13,18 @@ app.use("*", logger());
 app.use(
   "*",
   cors({
-    origin: ["http://localhost:3000", "https://bcc-rides.vercel.app/"],
+    origin: (origin) => {
+      const allowed = [
+        "http://localhost:3000",
+        "https://bcc-rides.vercel.app",
+      ];
+      if (allowed.includes(origin)) return origin;
+      // Allow Vercel preview deployments
+      if (/^https:\/\/bcc-rides-.*-airbursts-projects\.vercel\.app$/.test(origin)) {
+        return origin;
+      }
+      return null;
+    },
     credentials: true,
   }),
 );
