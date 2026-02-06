@@ -252,11 +252,8 @@ ridesRouter.put("/:id", authMiddleware, requireRole("LEADER", "ADMIN"), async (c
     return c.json({ error: "Invalid request body" }, 400);
   }
 
-  console.log("PUT /rides/:id body:", JSON.stringify(body, null, 2));
-
   const result = updateRideSchema.safeParse(body);
   if (!result.success) {
-    console.log("Validation error:", JSON.stringify(result.error.issues, null, 2));
     return c.json(
       { error: "Validation failed", details: z.treeifyError(result.error) },
       400,
