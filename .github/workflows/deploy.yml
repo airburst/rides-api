@@ -1,0 +1,80 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # Allow manual triggers
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    # Only run if CI passes
+    needs: []
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H $VPS_HOST >> ~/.ssh/known_hosts
+
+      - name: Deploy to VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_APP_PATH: ${{ secrets.VPS_APP_PATH }}
+        run: |
+          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST << 'ENDSSH'
+            set -e
+            echo "🚀 Starting deployment..."
+
+            # Navigate to app directory
+            cd ${{ secrets.VPS_APP_PATH }}
+
+            # Pull latest code
+            echo "📥 Pulling latest code..."
+            git pull origin main
+
+            # Install dependencies (production only)
+            echo "📦 Installing dependencies..."
+            /home/ubuntu/.bun/bin/bun install --production
+
+            # Run database migrations
+            echo "🗄️  Running database migrations..."
+            /home/ubuntu/.bun/bin/bun run db:migrate
+
+            # Build application
+            echo "🔨 Building application..."
+            /home/ubuntu/.bun/bin/bun run build
+
+            # Reload PM2 (graceful restart)
+            echo "♻️  Reloading application..."
+            pm2 reload rides-api --update-env
+
+            # Verify deployment
+            echo "✅ Verifying deployment..."
+            sleep 2
+            pm2 describe rides-api | grep status
+
+            echo "🎉 Deployment complete!"
+          ENDSSH
+
+      - name: Health Check
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          sleep 5
+          curl -f http://$VPS_HOST:3001/health || exit 1
+          echo "✅ Health check passed!"
+
+      - name: Cleanup
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
