@@ -1,22 +1,20 @@
 #!/usr/bin/env bash
 # Start local postgres container for development
 
-container system start
-
 DB_CONTAINER_NAME="bcc3-postgres"
 
-if ! [ -x "$(command -v container)" ]; then
-  echo "container CLI is not installed. Please install and try again."
+if ! [ -x "$(command -v docker)" ]; then
+  echo "Docker is not installed. Please install and try again."
   exit 1
 fi
 
-if container ls | grep "$DB_CONTAINER_NAME"; then
+if docker ps | grep "$DB_CONTAINER_NAME"; then
   echo "Database container '$DB_CONTAINER_NAME' already running"
   exit 0
 fi
 
-if container ls -a | grep "$DB_CONTAINER_NAME"; then
-  container start "$DB_CONTAINER_NAME"
+if docker ps -a | grep "$DB_CONTAINER_NAME"; then
+  docker start "$DB_CONTAINER_NAME"
   echo "Database container '$DB_CONTAINER_NAME' started"
   exit 0
 fi
@@ -48,9 +46,10 @@ if [ "$DB_PASSWORD" = "password" ]; then
   fi
 fi
 
-container run -d \
+docker run -d \
   --name $DB_CONTAINER_NAME \
+  -p 5432:5432 \
   -e POSTGRES_USER="postgres" \
   -e POSTGRES_PASSWORD="$DB_PASSWORD" \
   -e POSTGRES_DB=bcc3 \
-  docker.io/postgres && echo "Database container '$DB_CONTAINER_NAME' created"
+  postgres:17 && echo "Database container '$DB_CONTAINER_NAME' created"
