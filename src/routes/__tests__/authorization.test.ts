@@ -1,13 +1,13 @@
 /**
  * Authorization Tests - CRITICAL SECURITY TESTS
- * 
+ *
  * Tests role-based access control across ALL API endpoints.
  * Every endpoint MUST be tested with every role combination.
- * 
+ *
  * This is the MOST IMPORTANT test file - authorization bugs can expose all data.
  */
 
-import { beforeEach, describe, test, expect, mock } from "bun:test";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { Hono } from "hono";
 import { TEST_TOKENS, TEST_USERS } from "../../test/auth.js";
 
@@ -47,35 +47,35 @@ const mockDbQuery = {
     }),
   },
   users: {
-    findFirst: mock(() => Promise.resolve(null)),
-    findMany: mock(() => Promise.resolve([])),
+    findFirst: mock(() => Promise.resolve(null as any)),
+    findMany: mock(() => Promise.resolve([] as any[])),
   },
   rides: {
-    findFirst: mock(() => Promise.resolve(null)),
-    findMany: mock(() => Promise.resolve([])),
+    findFirst: mock(() => Promise.resolve(null as any)),
+    findMany: mock(() => Promise.resolve([] as any[])),
   },
   userOnRides: {
-    findFirst: mock(() => Promise.resolve(null)),
-    findMany: mock(() => Promise.resolve([])),
+    findFirst: mock(() => Promise.resolve(null as any)),
+    findMany: mock(() => Promise.resolve([] as any[])),
   },
   repeatingRides: {
-    findFirst: mock(() => Promise.resolve(null)),
-    findMany: mock(() => Promise.resolve([])),
+    findFirst: mock(() => Promise.resolve(null as any)),
+    findMany: mock(() => Promise.resolve([] as any[])),
   },
 };
 
 const mockDb = {
   query: mockDbQuery,
-  insert: mock(() => ({ 
+  insert: mock(() => ({
     values: mock(() => Promise.resolve()),
   })),
-  update: mock(() => ({ 
-    set: mock(() => ({ 
-      where: mock(() => Promise.resolve())
-    }))
+  update: mock(() => ({
+    set: mock(() => ({
+      where: mock(() => Promise.resolve()),
+    })),
   })),
-  delete: mock(() => ({ 
-    where: mock(() => Promise.resolve())
+  delete: mock(() => ({
+    where: mock(() => Promise.resolve()),
   })),
   select: mock(() => ({
     from: mock(() => ({
@@ -624,23 +624,32 @@ describe("🔐 Authorization Tests (CRITICAL)", () => {
       });
 
       test("rejects USER (403)", async () => {
-        const response = await app.request("/repeating-rides/test-schedule-id", {
-          headers: { Authorization: `Bearer ${TEST_TOKENS.USER}` },
-        });
+        const response = await app.request(
+          "/repeating-rides/test-schedule-id",
+          {
+            headers: { Authorization: `Bearer ${TEST_TOKENS.USER}` },
+          },
+        );
         expect(response.status).toBe(403);
       });
 
       test("rejects LEADER (403)", async () => {
-        const response = await app.request("/repeating-rides/test-schedule-id", {
-          headers: { Authorization: `Bearer ${TEST_TOKENS.LEADER}` },
-        });
+        const response = await app.request(
+          "/repeating-rides/test-schedule-id",
+          {
+            headers: { Authorization: `Bearer ${TEST_TOKENS.LEADER}` },
+          },
+        );
         expect(response.status).toBe(403);
       });
 
       test("allows ADMIN", async () => {
-        const response = await app.request("/repeating-rides/test-schedule-id", {
-          headers: { Authorization: `Bearer ${TEST_TOKENS.ADMIN}` },
-        });
+        const response = await app.request(
+          "/repeating-rides/test-schedule-id",
+          {
+            headers: { Authorization: `Bearer ${TEST_TOKENS.ADMIN}` },
+          },
+        );
         expect(response.status).toBe(200);
       });
     });
@@ -710,91 +719,113 @@ describe("🔐 Authorization Tests (CRITICAL)", () => {
     });
 
     describe("PUT /repeating-rides/:id - Update template", () => {
-      const updateBody = { 
+      const updateBody = {
         name: "Updated Schedule",
         schedule: "Monday 10:00",
       };
 
       test("rejects guests (401)", async () => {
-        const response = await app.request("/repeating-rides/test-schedule-id", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updateBody),
-        });
+        const response = await app.request(
+          "/repeating-rides/test-schedule-id",
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updateBody),
+          },
+        );
         expect(response.status).toBe(401);
       });
 
       test("rejects USER (403)", async () => {
-        const response = await app.request("/repeating-rides/test-schedule-id", {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${TEST_TOKENS.USER}`,
-            "Content-Type": "application/json",
+        const response = await app.request(
+          "/repeating-rides/test-schedule-id",
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${TEST_TOKENS.USER}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(updateBody),
           },
-          body: JSON.stringify(updateBody),
-        });
+        );
         expect(response.status).toBe(403);
       });
 
       test("rejects LEADER (403)", async () => {
-        const response = await app.request("/repeating-rides/test-schedule-id", {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${TEST_TOKENS.LEADER}`,
-            "Content-Type": "application/json",
+        const response = await app.request(
+          "/repeating-rides/test-schedule-id",
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${TEST_TOKENS.LEADER}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(updateBody),
           },
-          body: JSON.stringify(updateBody),
-        });
+        );
         expect(response.status).toBe(403);
       });
 
       test("allows ADMIN", async () => {
-        const response = await app.request("/repeating-rides/test-schedule-id", {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${TEST_TOKENS.ADMIN}`,
-            "Content-Type": "application/json",
+        const response = await app.request(
+          "/repeating-rides/test-schedule-id",
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${TEST_TOKENS.ADMIN}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(updateBody),
           },
-          body: JSON.stringify(updateBody),
-        });
+        );
         expect(response.status).toBe(200);
       });
     });
 
     describe("DELETE /repeating-rides/:id - Delete template", () => {
       test("rejects guests (401)", async () => {
-        const response = await app.request("/repeating-rides/test-schedule-id", {
-          method: "DELETE",
-        });
+        const response = await app.request(
+          "/repeating-rides/test-schedule-id",
+          {
+            method: "DELETE",
+          },
+        );
         expect(response.status).toBe(401);
       });
 
       test("rejects USER (403)", async () => {
-        const response = await app.request("/repeating-rides/test-schedule-id", {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${TEST_TOKENS.USER}` },
-        });
+        const response = await app.request(
+          "/repeating-rides/test-schedule-id",
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${TEST_TOKENS.USER}` },
+          },
+        );
         expect(response.status).toBe(403);
       });
 
       test("rejects LEADER (403)", async () => {
-        const response = await app.request("/repeating-rides/test-schedule-id", {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${TEST_TOKENS.LEADER}` },
-        });
+        const response = await app.request(
+          "/repeating-rides/test-schedule-id",
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${TEST_TOKENS.LEADER}` },
+          },
+        );
         expect(response.status).toBe(403);
       });
 
       test("allows ADMIN", async () => {
-        const response = await app.request("/repeating-rides/test-schedule-id", {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${TEST_TOKENS.ADMIN}` },
-        });
+        const response = await app.request(
+          "/repeating-rides/test-schedule-id",
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${TEST_TOKENS.ADMIN}` },
+          },
+        );
         expect(response.status).toBe(200);
       });
     });
-
-
   });
 
   describe("Users Routes", () => {
