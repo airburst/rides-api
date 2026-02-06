@@ -11,7 +11,13 @@
     "format": "prettier --write .",
     "check": "prettier --write . && eslint --fix",
     "check-types": "tsc --noEmit",
-    "deploy": "ssh -i ~/.ssh/oracle-rides-key ubuntu@143.47.251.53 'cd ~/rides-api && git pull && npm ci && npm run build && pm2 restart rides-api'"
+    "deploy": "ssh -i ~/.ssh/oracle-rides-key ubuntu@143.47.251.53 'cd ~/rides-api && git pull && npm ci && npm run build && pm2 restart rides-api'",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:pump": "tsx src/db/pump.ts",
+    "db:studio": "drizzle-kit studio",
+    "startdb": "./bin/start-database"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.9",
@@ -26,6 +32,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@types/node": "^25.2.0",
+    "drizzle-kit": "^0.30.5",
     "eslint": "^9.39.2",
     "eslint-plugin-unused-imports": "^4.3.0",
     "prettier": "^3.8.1",

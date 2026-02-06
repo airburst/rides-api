@@ -1,0 +1,1 @@
+ALTER TABLE "bcc_users" DROP COLUMN IF EXISTS "is_member";

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Start local postgres, push schema, pump data, and run API
+
+set -e
+
+npm run startdb
+npm run db:push
+npm run db:pump
+npm run dev

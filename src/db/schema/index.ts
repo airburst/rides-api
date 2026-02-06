@@ -225,3 +225,32 @@ export const memberships = createTable("membership", {
   isVerified: t.boolean(),
   isGuest: t.boolean(),
 });
+
+// Sessions (NextAuth - legacy, kept for DB compatibility)
+export const sessions = createTable(
+  "sessions",
+  {
+    sessionToken: t.varchar({ length: 255 }).notNull().primaryKey(),
+    userId: t
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => users.id),
+    expires: t.timestamp({ withTimezone: true }).notNull(),
+  },
+  (table) => [t.index("session_userId_idx").on(table.userId)],
+);
+
+export const sessionRelations = relations(sessions, ({ one }) => ({
+  users: one(users, { fields: [sessions.userId], references: [users.id] }),
+}));
+
+// Verification Tokens (NextAuth - legacy, kept for DB compatibility)
+export const verificationTokens = createTable(
+  "verification_tokens",
+  {
+    identifier: t.varchar({ length: 255 }).notNull(),
+    token: t.varchar({ length: 255 }).notNull(),
+    expires: t.timestamp({ precision: 3, withTimezone: true }).notNull(),
+  },
+  (vt) => [t.primaryKey({ columns: [vt.identifier, vt.token] })],
+);

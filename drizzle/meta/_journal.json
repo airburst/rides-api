@@ -1,0 +1,48 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1719936854769,
+      "tag": "0000_dapper_johnny_storm",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1720888414355,
+      "tag": "0001_complete_satana",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1720967407234,
+      "tag": "0002_lush_gamma_corps",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1738517390300,
+      "tag": "0003_familiar_blackheart",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1738608619697,
+      "tag": "0004_aromatic_paladin",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1759391221275,
+      "tag": "0005_loose_dreaming_celestial",
+      "breakpoints": true
+    }
+  ]
+}

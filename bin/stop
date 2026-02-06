@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+container stop bcc3-postgres && container rm bcc3-postgres
