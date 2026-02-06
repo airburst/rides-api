@@ -8,7 +8,7 @@ A Hono-based REST API for managing bike rides, built with TypeScript, Drizzle OR
 - **Framework**: [Hono](https://hono.dev) - Ultrafast web framework
 - **Database**: PostgreSQL (via [Supabase](https://supabase.com))
 - **ORM**: [Drizzle ORM](https://orm.drizzle.team)
-- **Cache**: Redis (Bun native adapter)
+- **Cache**: Redis (npm redis client)
 - **Auth**: Auth0 JWT tokens
 - **Validation**: Zod
 - **Process Manager**: PM2 (production)
