@@ -8,6 +8,9 @@ const createTable = pgTableCreator((name) => `bcc_${name}`);
 // Enums
 export const roleEnum = t.pgEnum("role", ["USER", "LEADER", "ADMIN"]);
 
+// Type exports
+export type Role = typeof roleEnum.enumValues[number];
+
 // ============ TABLES ============
 
 export const users = createTable(

@@ -45,7 +45,7 @@ export function formatDate(date: Date): string {
 /**
  * Create a date for testing (relative to today)
  */
-export function createTestDate(daysOffset: number = 0): string {
+export function createTestDate(daysOffset = 0): string {
   const date = new Date();
   date.setDate(date.getDate() + daysOffset);
   return formatDate(date);
@@ -55,7 +55,7 @@ export function createTestDate(daysOffset: number = 0): string {
  * Parse RRule string and extract specific parameter
  */
 export function extractRRuleParam(rrule: string, param: string): string | null {
-  const match = rrule.match(new RegExp(`${param}=([^;]+)`));
+  const match = new RegExp(`${param}=([^;]+)`).exec(rrule);
   return match ? match[1] : null;
 }
 

@@ -7,9 +7,7 @@
  * This is the MOST IMPORTANT test file - authorization bugs can expose all data.
  */
 
-import { describe, test, expect, beforeAll } from "bun:test";
-import { Hono } from "hono";
-import { TEST_TOKENS, TEST_USERS } from "../../test/auth";
+import { describe, test, expect } from "bun:test";
 
 // Mock environment variables for testing
 process.env.API_KEY = "test-api-key-12345";
