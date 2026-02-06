@@ -1,12 +1,26 @@
-// @ts-expect-error - bun:redis types not yet in bun-types
-import { createClient } from "bun:redis";
-
 const REDIS_URL = process.env.REDIS_URL ?? "redis://localhost:6379";
 const CACHE_ENABLED = process.env.CACHE_ENABLED === "true";
 const CACHE_TTL = Number.parseInt(process.env.CACHE_TTL ?? "300", 10);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let redisClient: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let createClient: any = null;
+
+// Lazy load bun:redis to avoid import errors in test environments
+async function loadRedis() {
+  if (createClient) return;
+  try {
+    // @ts-expect-error - bun:redis types not yet in bun-types
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const redis = await import("bun:redis");
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    createClient = redis.createClient;
+  } catch (error) {
+    console.error("Failed to load bun:redis module:", error);
+    throw error;
+  }
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getRedisClient(): Promise<any> {
@@ -19,6 +33,8 @@ export async function getRedisClient(): Promise<any> {
   }
 
   try {
+    await loadRedis();
+
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
     redisClient = createClient({ url: REDIS_URL });
 
