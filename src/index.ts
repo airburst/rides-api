@@ -3,8 +3,10 @@ import "dotenv/config";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { archiveRouter } from "./routes/archive.js";
 import { generateRouter } from "./routes/generate.js";
 import { repeatingRidesRouter } from "./routes/repeating-rides.js";
+import { riderhqRouter } from "./routes/riderhq.js";
 import { ridesRouter } from "./routes/rides.js";
 import { usersRouter } from "./routes/users.js";
 
@@ -36,6 +38,8 @@ app.route("/rides", ridesRouter);
 app.route("/users", usersRouter);
 app.route("/repeating-rides", repeatingRidesRouter);
 app.route("/generate", generateRouter);
+app.route("/archive", archiveRouter);
+app.route("/riderhq", riderhqRouter);
 
 // Health check
 app.get("/health", (c) =>

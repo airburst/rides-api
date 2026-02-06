@@ -171,3 +171,57 @@ export const repeatingRides = createTable(
 export const repeatingRideRelations = relations(repeatingRides, ({ many }) => ({
   rides: many(rides),
 }));
+
+// Archived Rides (for historical data)
+export const archivedRides = createTable(
+  "archived_rides",
+  {
+    id: t.text().primaryKey(),
+    name: t.varchar({ length: 255 }).notNull(),
+    rideGroup: t.varchar({ length: 255 }),
+    rideDate: t.timestamp({ precision: 3, mode: "string" }).notNull(),
+    destination: t.varchar({ length: 255 }),
+    distance: t.integer(),
+    meetPoint: t.varchar({ length: 255 }),
+    route: t.varchar({ length: 255 }),
+    leader: t.varchar({ length: 255 }),
+    notes: t.text(),
+    rideLimit: t.integer().notNull().default(-1),
+    deleted: t.boolean().notNull().default(false),
+    cancelled: t.boolean().notNull().default(false),
+    createdAt: t
+      .timestamp({ precision: 3, mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [t.index().on(table.name)],
+);
+
+export const archivedUserOnRides = createTable(
+  "archived_users_on_rides",
+  {
+    userId: t.varchar({ length: 255 }).notNull(),
+    rideId: t.varchar({ length: 255 }).notNull(),
+    notes: t.text(),
+    createdAt: t
+      .timestamp({ precision: 3, mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [t.primaryKey({ columns: [table.userId, table.rideId] })],
+);
+
+// Memberships (from RiderHQ)
+export const memberships = createTable("membership", {
+  system: t.text().notNull().default("RiderHQ"),
+  memberId: t.text().primaryKey().notNull(),
+  userId: t.text().notNull(),
+  handle: t.text().notNull(),
+  isUser: t.boolean().notNull(),
+  firstnames: t.text().notNull(),
+  lastname: t.text().notNull(),
+  email: t.text().notNull(),
+  expires: t.text(),
+  isVerified: t.boolean(),
+  isGuest: t.boolean(),
+});
