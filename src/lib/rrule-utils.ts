@@ -1,4 +1,5 @@
-import { RRule } from "rrule";
+import pkg from "rrule";
+const { RRule } = pkg;
 
 type RepeatingRideDb = {
   id?: string;
