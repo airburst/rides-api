@@ -1,0 +1,301 @@
+[
+  {
+    "id": "clvn65kcp001yatn9re1yypxx",
+    "name": "paceline",
+    "rideGroup": "1 - (1 hr 49)",
+    "destination": null,
+    "rideLimit": 7,
+    "rideDate": "2024-06-08T08:40:00.000Z",
+    "distance": 70
+  },
+  {
+    "id": "clvn65kau0006atn9227j9y2k",
+    "name": "paceline",
+    "rideGroup": "2 - (1 hr 53)",
+    "destination": "",
+    "rideLimit": 8,
+    "rideDate": "2024-06-08T08:41:00.000Z",
+    "distance": 70
+  },
+  {
+    "id": "clvn65kba000catn9m19uak72",
+    "name": "paceline",
+    "rideGroup": "3 - (1 hr 57)",
+    "destination": null,
+    "rideLimit": 7,
+    "rideDate": "2024-06-08T08:42:00.000Z",
+    "distance": 70
+  },
+  {
+    "id": "clvn65k8l0001atn9b87oi2dp",
+    "name": "paceline",
+    "rideGroup": "4 - (2 hr)",
+    "destination": "",
+    "rideLimit": 8,
+    "rideDate": "2024-06-08T08:43:00.000Z",
+    "distance": 70
+  },
+  {
+    "id": "clvn65kbe000hatn97uyn7s0b",
+    "name": "paceline",
+    "rideGroup": "5 - (2 hr 5min)",
+    "destination": null,
+    "rideLimit": 7,
+    "rideDate": "2024-06-08T08:44:00.000Z",
+    "distance": 70
+  },
+  {
+    "id": "clvn65kch001latn9jl7sivnl",
+    "name": "paceline",
+    "rideGroup": "Rockers",
+    "destination": "Chelsea Road",
+    "rideLimit": -1,
+    "rideDate": "2024-06-08T08:45:00.000Z",
+    "distance": 70
+  },
+  {
+    "id": "clvn65kbu000satn96t1thr4o",
+    "name": "Saturday Social",
+    "rideGroup": "Longer",
+    "destination": "Blagdon Coffee Station",
+    "rideLimit": -1,
+    "rideDate": "2024-06-08T09:00:00.000Z",
+    "distance": 70
+  },
+  {
+    "id": "clvn65kbt000natn92wrcfixi",
+    "name": "Saturday Social",
+    "rideGroup": "Shorter",
+    "destination": null,
+    "rideLimit": -1,
+    "rideDate": "2024-06-08T09:00:00.000Z",
+    "distance": 40
+  },
+  {
+    "id": "clvn65kc30012atn9mc320btl",
+    "name": "Sunday Ride",
+    "rideGroup": "Espresso",
+    "destination": "Water Parks 118km CW",
+    "rideLimit": -1,
+    "rideDate": "2024-06-09T08:30:00.000Z",
+    "distance": 118
+  },
+  {
+    "id": "clvn65kcf001datn9cfj983ci",
+    "name": "Sunday Ride",
+    "rideGroup": "Double Espresso",
+    "destination": "Maiden Bradley",
+    "rideLimit": -1,
+    "rideDate": "2024-06-09T08:30:00.000Z",
+    "distance": 105,
+    "meetingPoint": "Bath Sports Centre",
+    "notes": "This is a longer form note for the ride, so the UX can be better tested. This is a longer form note for the ride, so the UX can be better tested. This is a longer form note for the ride, so the UX can be better tested. This is a longer form note for the ride, so the UX can be better tested. This is a longer form note for the ride, so the UX can be better tested."
+  },
+  {
+    "id": "clvn65kc50017atn91rclqe5a",
+    "name": "Sunday Ride",
+    "rideGroup": "Americano",
+    "destination": "Maiden Bradley (Race HQ)",
+    "rideLimit": -1,
+    "rideDate": "2024-06-09T08:30:00.000Z",
+    "distance": 95
+  },
+  {
+    "id": "clvn65kcg001hatn91a74lcqd",
+    "name": "Sunday Ride",
+    "rideGroup": "Double Shot Latte",
+    "destination": "Maiden Bradley Race HQ (cash only)",
+    "rideLimit": -1,
+    "rideDate": "2024-06-09T08:30:00.000Z",
+    "distance": 81
+  },
+  {
+    "id": "clvn65kcs0023atn9zk9e4nwi",
+    "name": "Tuesday Ride",
+    "rideGroup": null,
+    "destination": null,
+    "rideLimit": -1,
+    "rideDate": "2024-06-11T09:00:00.000Z",
+    "distance": 99
+  },
+  {
+    "id": "clvn65kct0027atn95q781d8l",
+    "name": "Wednesday Social",
+    "rideGroup": "",
+    "destination": "Leaf and Ground",
+    "rideLimit": -1,
+    "rideDate": "2024-06-12T09:15:00.000Z",
+    "distance": 100
+  },
+  {
+    "id": "clvtrhuqf000614l64xp7j2dw",
+    "name": "Thursday Beer and Pizza",
+    "rideGroup": "All",
+    "destination": "Locksbrook",
+    "rideLimit": -1,
+    "rideDate": "2024-06-13T18:15:00.000Z",
+    "distance": 45
+  },
+  {
+    "id": "clvn65kc9001batn9xjzzcm2o",
+    "name": "Friday Women (Shorter)",
+    "rideGroup": "Medium",
+    "destination": null,
+    "rideLimit": -1,
+    "rideDate": "2024-06-14T09:00:00.000Z",
+    "distance": 35
+  },
+  {
+    "id": "clvn65kc7001aatn9r77vx4ig",
+    "name": "Friday Women (Shorter)",
+    "rideGroup": "Steady",
+    "destination": null,
+    "rideLimit": -1,
+    "rideDate": "2024-06-14T09:00:00.000Z",
+    "distance": 35
+  },
+  {
+    "id": "clvn65kc50015atn9s2ube44d",
+    "name": "Friday Women (Shorter)",
+    "rideGroup": "Quicker",
+    "destination": null,
+    "rideLimit": -1,
+    "rideDate": "2024-06-14T09:00:00.000Z",
+    "distance": 35
+  },
+  {
+    "id": "clvn65kcp001zatn9cbmesg3a",
+    "name": "paceline",
+    "rideGroup": "1 - (1 hr 49)",
+    "destination": null,
+    "rideLimit": 7,
+    "rideDate": "2024-06-15T08:40:00.000Z",
+    "distance": 70
+  },
+  {
+    "id": "clvn65kau0007atn9x6j7ej7r",
+    "name": "paceline",
+    "rideGroup": "2 - (1 hr 53)",
+    "destination": null,
+    "rideLimit": 7,
+    "rideDate": "2024-06-15T08:41:00.000Z",
+    "distance": 70
+  },
+  {
+    "id": "clvn65kba000datn9k0h5j051",
+    "name": "paceline",
+    "rideGroup": "3 - (1 hr 57)",
+    "destination": null,
+    "rideLimit": 7,
+    "rideDate": "2024-06-15T08:42:00.000Z",
+    "distance": 70
+  },
+  {
+    "id": "clvn65k8l0002atn95jchklze",
+    "name": "paceline",
+    "rideGroup": "4 - (2 hr)",
+    "destination": null,
+    "rideLimit": 7,
+    "rideDate": "2024-06-15T08:43:00.000Z",
+    "distance": 70
+  },
+  {
+    "id": "clvn65kbe000iatn9i7j2l64u",
+    "name": "paceline",
+    "rideGroup": "5 - (2 hr 5min)",
+    "destination": null,
+    "rideLimit": 7,
+    "rideDate": "2024-06-15T08:44:00.000Z",
+    "distance": 70
+  },
+  {
+    "id": "clvn65kch001matn9ac65y9bu",
+    "name": "paceline",
+    "rideGroup": "Rockers",
+    "destination": "Chelsea Road",
+    "rideLimit": -1,
+    "rideDate": "2024-06-15T08:45:00.000Z",
+    "distance": 70
+  },
+  {
+    "id": "clvn65kbu000tatn9kmi9henl",
+    "name": "Saturday Social",
+    "rideGroup": "Longer",
+    "destination": null,
+    "rideLimit": -1,
+    "rideDate": "2024-06-15T09:00:00.000Z",
+    "distance": 70
+  },
+  {
+    "id": "clvn65kbt000oatn9zs3gtlz3",
+    "name": "Saturday Social",
+    "rideGroup": "Shorter",
+    "destination": null,
+    "rideLimit": -1,
+    "rideDate": "2024-06-15T09:00:00.000Z",
+    "distance": 40
+  },
+  {
+    "id": "clvn65kcf001eatn9hypdwii2",
+    "name": "Sunday Ride",
+    "rideGroup": "Double Espresso",
+    "destination": null,
+    "rideLimit": -1,
+    "rideDate": "2024-06-16T08:30:00.000Z",
+    "distance": 110
+  },
+  {
+    "id": "clvn65kcj001ratn9uo07ob2a",
+    "name": "Sunday Ride",
+    "rideGroup": "Fast >28kph",
+    "destination": "",
+    "rideLimit": -1,
+    "rideDate": "2024-06-16T08:30:00.000Z",
+    "distance": 100
+  },
+  {
+    "id": "clvn65kc50018atn9jnndl28x",
+    "name": "Sunday Ride",
+    "rideGroup": "Americano",
+    "destination": null,
+    "rideLimit": -1,
+    "rideDate": "2024-06-16T08:30:00.000Z",
+    "distance": 90
+  },
+  {
+    "id": "clvn65kcg001iatn9i93o5p19",
+    "name": "Sunday Ride",
+    "rideGroup": "Double Shot Latte",
+    "destination": null,
+    "rideLimit": -1,
+    "rideDate": "2024-06-16T08:30:00.000Z",
+    "distance": 82
+  },
+  {
+    "id": "clvn65kcs0024atn9kdfzmq9h",
+    "name": "Tuesday Ride",
+    "rideGroup": null,
+    "destination": null,
+    "rideLimit": -1,
+    "rideDate": "2024-06-18T09:00:00.000Z",
+    "distance": 99
+  },
+  {
+    "id": "clvn65kct0028atn961oql1l6",
+    "name": "Wednesday Social",
+    "rideGroup": null,
+    "destination": null,
+    "rideLimit": -1,
+    "rideDate": "2024-06-19T09:15:00.000Z",
+    "distance": 100
+  },
+  {
+    "id": "clvtrhuqf000714l6lyg93vo5",
+    "name": "Thursday Beer and Pizza",
+    "rideGroup": "All",
+    "destination": "Locksbrook",
+    "rideLimit": -1,
+    "rideDate": "2024-06-20T18:15:00.000Z",
+    "distance": 45
+  }
+]

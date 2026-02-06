@@ -16,6 +16,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:pump": "tsx src/db/pump.ts",
+    "db:seed": "DB_SEEDING=true tsx src/db/seed.ts",
     "db:studio": "drizzle-kit studio",
     "startdb": "./bin/start-database"
   },

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Start local postgres, push schema, pump production data, and run API
+# Start local postgres, push schema, seed test data, and run API
 
 set -e
 
@@ -10,5 +10,5 @@ echo "Waiting for postgres..."
 sleep 2
 
 npm run db:push
-npm run db:pump
+npm run db:seed
 npm run dev
