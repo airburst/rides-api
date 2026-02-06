@@ -1,8 +1,8 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gt } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../db/index.js";
-import { repeatingRides } from "../db/schema/index.js";
+import { repeatingRides, rides } from "../db/schema/index.js";
 import { authMiddleware, requireRole, type AuthUser } from "../middleware/auth.js";
 
 export const repeatingRidesRouter = new Hono<{ Variables: { user: AuthUser } }>();
@@ -155,8 +155,10 @@ repeatingRidesRouter.put("/:id", authMiddleware, requireRole("ADMIN"), async (c)
 });
 
 // DELETE /repeating-rides/:id - Delete a repeating ride (admin only)
+// Query param: ?cascade=true to also soft-delete future rides
 repeatingRidesRouter.delete("/:id", authMiddleware, requireRole("ADMIN"), async (c) => {
   const id = c.req.param("id");
+  const cascade = c.req.query("cascade") === "true";
 
   try {
     const existing = await db.query.repeatingRides.findFirst({
@@ -167,9 +169,22 @@ repeatingRidesRouter.delete("/:id", authMiddleware, requireRole("ADMIN"), async 
       return c.json({ error: "Repeating ride not found" }, 404);
     }
 
+    let deletedRideCount = 0;
+
+    // If cascade, soft-delete all future rides with this scheduleId
+    if (cascade) {
+      const now = new Date().toISOString();
+      const result = await db
+        .update(rides)
+        .set({ deleted: true })
+        .where(and(eq(rides.scheduleId, id), gt(rides.rideDate, now)))
+        .returning({ id: rides.id });
+      deletedRideCount = result.length;
+    }
+
     await db.delete(repeatingRides).where(eq(repeatingRides.id, id));
 
-    return c.json({ success: true, id });
+    return c.json({ success: true, id, deletedRideCount });
   } catch (error) {
     console.error("Delete repeating ride error:", error);
     return c.json({ error: "Failed to delete repeating ride" }, 500);
