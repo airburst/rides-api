@@ -14,6 +14,14 @@ set +a
 
 npm run startdb
 
+# Start Redis if caching is enabled
+if [ "$CACHE_ENABLED" = "true" ]; then
+  echo "Starting Redis (CACHE_ENABLED=true)..."
+  npm run startredis
+else
+  echo "Skipping Redis (CACHE_ENABLED=false)"
+fi
+
 # Wait for postgres to be ready
 echo "Waiting for postgres..."
 sleep 2
