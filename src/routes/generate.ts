@@ -76,6 +76,7 @@ generateRouter.post("/", async (c) => {
 
   // Check for user auth (client)
   let isUserAuth = false;
+  let hasValidToken = false;
   if (!isApiKeyAuth && authHeader?.startsWith("Bearer ")) {
     try {
       const token = authHeader.slice(7);
@@ -87,6 +88,7 @@ generateRouter.post("/", async (c) => {
         with: { users: true },
       });
 
+      hasValidToken = true;
       // Must be ADMIN - users is always present due to foreign key
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (account?.users?.role === "ADMIN") {
@@ -98,6 +100,10 @@ generateRouter.post("/", async (c) => {
   }
 
   if (!isApiKeyAuth && !isUserAuth) {
+    // If we have a valid token but not admin, return 403
+    if (hasValidToken) {
+      return c.json({ success: false, message: "Forbidden" }, 403);
+    }
     return c.json({ success: false, message: "Unauthorized" }, 401);
   }
 
