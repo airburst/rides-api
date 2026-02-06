@@ -152,3 +152,4 @@ After setting up secrets:
 2. Test the deployment workflow by merging to main
 3. Monitor GitHub Actions for any issues
 4. Update documentation with CI/CD badges
+# Test automated deployment
