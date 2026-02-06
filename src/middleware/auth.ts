@@ -1,8 +1,8 @@
+import { eq } from "drizzle-orm";
 import { createMiddleware } from "hono/factory";
-import { verifyAuth0Token } from "../lib/auth0.js";
 import { db } from "../db/index.js";
 import { accounts } from "../db/schema/index.js";
-import { eq } from "drizzle-orm";
+import { verifyAuth0Token } from "../lib/auth0.js";
 
 export interface AuthUser {
   id: string;
