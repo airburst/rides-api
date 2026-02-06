@@ -10,7 +10,8 @@
     "lint": "eslint --fix",
     "format": "prettier --write .",
     "check": "prettier --write . && eslint --fix",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "deploy": "ssh -i ~/.ssh/oracle-rides-key ubuntu@143.47.251.53 'cd ~/rides-api && git pull && npm ci && npm run build && pm2 restart rides-api'"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.9",
