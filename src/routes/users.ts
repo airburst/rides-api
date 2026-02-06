@@ -1,9 +1,9 @@
-import { eq } from "drizzle-orm";
+import { asc, eq, ilike, or } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../db/index.js";
 import { users } from "../db/schema/index.js";
-import { authMiddleware, type AuthUser } from "../middleware/auth.js";
+import { authMiddleware, requireRole, type AuthUser } from "../middleware/auth.js";
 
 export const usersRouter = new Hono<{ Variables: { user: AuthUser } }>();
 
@@ -16,6 +16,52 @@ const updateUserSchema = z.object({
   role: z.enum(["USER", "LEADER", "ADMIN"]).optional(),
   membershipId: z.string().optional(),
   membershipStatus: z.string().optional(),
+});
+
+// GET /users - List all users (admin only)
+usersRouter.get("/", authMiddleware, requireRole("ADMIN"), async (c) => {
+  const query = c.req.query("q");
+
+  try {
+    let result;
+    if (query) {
+      const lowerQuery = `%${query.toLowerCase()}%`;
+      result = await db.query.users.findMany({
+        columns: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          role: true,
+          membershipId: true,
+          membershipStatus: true,
+        },
+        where: or(
+          ilike(users.name, lowerQuery),
+          ilike(users.email, lowerQuery),
+        ),
+        orderBy: [asc(users.name)],
+      });
+    } else {
+      result = await db.query.users.findMany({
+        columns: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+          role: true,
+          membershipId: true,
+          membershipStatus: true,
+        },
+        orderBy: [asc(users.name)],
+      });
+    }
+
+    return c.json({ users: result });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return c.json({ error: "Failed to fetch users" }, 500);
+  }
 });
 
 // GET /users/me - Get current user
