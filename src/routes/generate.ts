@@ -3,11 +3,12 @@ import { Hono } from "hono";
 import { db } from "../db/index.js";
 import { accounts, repeatingRides, rides } from "../db/schema/index.js";
 import { verifyAuth0Token } from "../lib/auth0.js";
+import { cacheInvalidatePattern } from "../lib/cache.js";
 import {
-  makeRidesInPeriod,
-  updateRRuleStartDate,
-  type RepeatingRideDb,
-  type RideSet,
+	makeRidesInPeriod,
+	updateRRuleStartDate,
+	type RepeatingRideDb,
+	type RideSet,
 } from "../lib/rrule-utils.js";
 
 export const generateRouter = new Hono();
@@ -157,6 +158,9 @@ generateRouter.post("/", async (c) => {
     }
 
     const totalErrors = results.filter((r) => r.error).length;
+
+    // Invalidate all ride caches (bulk operation created multiple rides)
+    void cacheInvalidatePattern("rides:*");
 
     return c.json({
       success: totalErrors === 0,

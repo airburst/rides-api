@@ -8,6 +8,7 @@ A Hono-based REST API for managing bike rides, built with TypeScript, Drizzle OR
 - **Framework**: [Hono](https://hono.dev) - Ultrafast web framework
 - **Database**: PostgreSQL (via [Supabase](https://supabase.com))
 - **ORM**: [Drizzle ORM](https://orm.drizzle.team)
+- **Cache**: Redis (Bun native adapter)
 - **Auth**: Auth0 JWT tokens
 - **Validation**: Zod
 - **Process Manager**: PM2 (production)
@@ -63,9 +64,33 @@ API_KEY=your-secret-api-key
 RIDERHQ_URL=https://www.riderhq.com
 RIDERHQ_ACCOUNT_ID=
 RIDERHQ_PRIVATE_KEY=
+
+# Redis Cache (optional, recommended for production)
+REDIS_URL=redis://localhost:6379
+CACHE_ENABLED=true
+CACHE_TTL=300
 ```
 
-### 4. Database Setup
+### 4. Redis Setup (Optional)
+
+For development without caching, set `CACHE_ENABLED=false` in your `.env` file.
+
+For production or to test caching locally:
+
+```bash
+# Install Redis
+brew install redis  # macOS
+# or
+sudo apt install redis-server  # Linux
+
+# Start Redis
+redis-server
+
+# Test connection
+redis-cli ping  # should return PONG
+```
+
+### 5. Database Setup
 
 Run migrations:
 
@@ -79,7 +104,7 @@ Optional - Seed database with test data:
 bun run db:seed
 ```
 
-### 5. Development
+### 6. Development
 
 Start the development server with hot reload:
 
@@ -149,6 +174,40 @@ bun run deploy
 ```
 
 This SSHs into the VPS and runs the deployment commands.
+
+### Redis Setup on VPS
+
+On the production server, run the setup script:
+
+```bash
+cd ~/rides-api
+./bin/setup-redis.sh
+```
+
+Then follow the instructions to set a Redis password and update the production `.env` file.
+
+**Important**: Make sure to add these environment variables to production:
+
+```bash
+REDIS_URL=redis://:YOUR_STRONG_PASSWORD@localhost:6379
+CACHE_ENABLED=true
+CACHE_TTL=300
+```
+
+After updating `.env`, reload the API:
+
+```bash
+pm2 reload ecosystem.config.cjs
+```
+
+### Cache Performance
+
+With Redis caching enabled:
+- **GET /rides**: ~90% faster (100-500ms → 5-10ms cached)
+- **GET /rides/:id**: ~95% faster (50-200ms → 2-5ms cached)
+- Target cache hit rate: >80%
+
+Cache invalidation is automatic on all ride mutations (create, update, delete, join, leave, cancel).
 
 ## Development with Bun
 

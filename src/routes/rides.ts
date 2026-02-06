@@ -4,10 +4,17 @@ import { z } from "zod";
 import { db } from "../db/index.js";
 import { rides, userOnRides } from "../db/schema/index.js";
 import {
-  authMiddleware,
-  optionalAuth,
-  requireRole,
-  type AuthUser,
+	buildCacheKey,
+	cacheGet,
+	cacheInvalidate,
+	cacheInvalidatePattern,
+	cacheSet,
+} from "../lib/cache.js";
+import {
+	authMiddleware,
+	optionalAuth,
+	requireRole,
+	type AuthUser,
 } from "../middleware/auth.js";
 
 // Validation schemas
@@ -31,67 +38,97 @@ export const ridesRouter = new Hono<{ Variables: { user?: AuthUser } }>();
 
 // GET /rides?start=2024-01-01&end=2024-12-31
 ridesRouter.get("/", optionalAuth, async (c) => {
-  const start = c.req.query("start") ?? new Date().toISOString().split("T")[0];
-  const end = c.req.query("end") ?? "2099-12-31";
+	const start = c.req.query("start") ?? new Date().toISOString().split("T")[0];
+	const end = c.req.query("end") ?? "2099-12-31";
 
-  try {
-    const result = await db.query.rides.findMany({
-      columns: {
-        id: true,
-        name: true,
-        rideGroup: true,
-        rideDate: true,
-        destination: true,
-        distance: true,
-        rideLimit: true,
-        cancelled: true,
-        createdAt: true,
-      },
-      with: {
-        users: {
-          columns: { userId: true },
-        },
-      },
-      where: and(
-        lte(rides.rideDate, `${end}T23:59:59`),
-        gte(rides.rideDate, start),
-        eq(rides.deleted, false),
-      ),
-      orderBy: [asc(rides.rideDate), asc(rides.name), desc(rides.distance)],
-    });
+	// Build cache key
+	const cacheKey = buildCacheKey("list", { date: `${start}:${end}`, limit: 0, offset: 0 });
 
-    return c.json({ rides: result });
-  } catch (error) {
-    console.error("Error fetching rides:", error);
-    return c.json({ error: "Failed to fetch rides" }, 500);
-  }
+	try {
+		// Try cache first
+		const cached = await cacheGet<{ rides: unknown[] }>(cacheKey);
+		if (cached) {
+			return c.json(cached);
+		}
+
+		// Cache miss - query database
+		const result = await db.query.rides.findMany({
+			columns: {
+				id: true,
+				name: true,
+				rideGroup: true,
+				rideDate: true,
+				destination: true,
+				distance: true,
+				rideLimit: true,
+				cancelled: true,
+				createdAt: true,
+			},
+			with: {
+				users: {
+					columns: { userId: true },
+				},
+			},
+			where: and(
+				lte(rides.rideDate, `${end}T23:59:59`),
+				gte(rides.rideDate, start),
+				eq(rides.deleted, false),
+			),
+			orderBy: [asc(rides.rideDate), asc(rides.name), desc(rides.distance)],
+		});
+
+		const response = { rides: result };
+
+		// Store in cache
+		void cacheSet(cacheKey, response);
+
+		return c.json(response);
+	} catch (error) {
+		console.error("Error fetching rides:", error);
+		return c.json({ error: "Failed to fetch rides" }, 500);
+	}
 });
 
 // GET /rides/:id
 ridesRouter.get("/:id", optionalAuth, async (c) => {
-  const id = c.req.param("id");
+	const id = c.req.param("id");
 
-  try {
-    const result = await db.query.rides.findFirst({
-      with: {
-        users: {
-          columns: { notes: true, createdAt: true },
-          with: { user: true },
-          orderBy: (userOnRides, { asc }) => [asc(userOnRides.createdAt)],
-        },
-      },
-      where: and(eq(rides.id, id), eq(rides.deleted, false)),
-    });
+	// Build cache key
+	const cacheKey = buildCacheKey("detail", { rideId: id });
 
-    if (!result) {
-      return c.json({ error: "Ride not found" }, 404);
-    }
+	try {
+		// Try cache first
+		const cached = await cacheGet<{ ride: unknown }>(cacheKey);
+		if (cached) {
+			return c.json(cached);
+		}
 
-    return c.json({ ride: result });
-  } catch (error) {
-    console.error("Error fetching ride:", error);
-    return c.json({ error: "Failed to fetch ride" }, 500);
-  }
+		// Cache miss - query database
+		const result = await db.query.rides.findFirst({
+			with: {
+				users: {
+					columns: { notes: true, createdAt: true },
+					with: { user: true },
+					orderBy: (userOnRides, { asc }) => [asc(userOnRides.createdAt)],
+				},
+			},
+			where: and(eq(rides.id, id), eq(rides.deleted, false)),
+		});
+
+		if (!result) {
+			return c.json({ error: "Ride not found" }, 404);
+		}
+
+		const response = { ride: result };
+
+		// Store in cache
+		void cacheSet(cacheKey, response);
+
+		return c.json(response);
+	} catch (error) {
+		console.error("Error fetching ride:", error);
+		return c.json({ error: "Failed to fetch ride" }, 500);
+	}
 });
 
 // POST /rides/:id/join
@@ -117,6 +154,11 @@ ridesRouter.post("/:id/join", authMiddleware, async (c) => {
 
   try {
     await db.insert(userOnRides).values({ rideId, userId: targetUserId });
+
+    // Invalidate caches
+    void cacheInvalidate(buildCacheKey("detail", { rideId }));
+    void cacheInvalidatePattern("rides:list:*");
+
     return c.json({ success: true });
   } catch (error) {
     console.error("Join error:", error);
@@ -153,6 +195,11 @@ ridesRouter.post("/:id/leave", authMiddleware, async (c) => {
           eq(userOnRides.userId, targetUserId),
         ),
       );
+
+    // Invalidate caches
+    void cacheInvalidate(buildCacheKey("detail", { rideId }));
+    void cacheInvalidatePattern("rides:list:*");
+
     return c.json({ success: true });
   } catch (error) {
     console.error("Leave error:", error);
@@ -191,6 +238,10 @@ ridesRouter.patch("/:id/notes", authMiddleware, async (c) => {
           eq(userOnRides.userId, targetUserId),
         ),
       );
+
+    // Invalidate cache for ride detail (notes are included there)
+    void cacheInvalidate(buildCacheKey("detail", { rideId }));
+
     return c.json({ success: true });
   } catch (error) {
     console.error("Update notes error:", error);
@@ -233,6 +284,9 @@ ridesRouter.post("/", authMiddleware, requireRole("LEADER", "ADMIN"), async (c) 
       rideLimit: data.rideLimit,
       scheduleId: data.scheduleId ?? null,
     });
+
+    // Invalidate all ride caches
+    void cacheInvalidatePattern("rides:*");
 
     return c.json({ success: true, id }, 201);
   } catch (error) {
@@ -287,6 +341,11 @@ ridesRouter.put("/:id", authMiddleware, requireRole("LEADER", "ADMIN"), async (c
 
   try {
     await db.update(rides).set(updateData).where(eq(rides.id, id));
+
+    // Invalidate caches
+    void cacheInvalidate(buildCacheKey("detail", { rideId: id }));
+    void cacheInvalidatePattern("rides:list:*");
+
     return c.json({ success: true, id });
   } catch (error) {
     console.error("Update ride error:", error);
@@ -312,6 +371,11 @@ ridesRouter.delete("/:id", authMiddleware, requireRole("LEADER", "ADMIN"), async
       .update(rides)
       .set({ deleted: true, updatedAt: new Date().toISOString() })
       .where(eq(rides.id, id));
+
+    // Invalidate caches
+    void cacheInvalidate(buildCacheKey("detail", { rideId: id }));
+    void cacheInvalidatePattern("rides:list:*");
+
     return c.json({ success: true });
   } catch (error) {
     console.error("Delete ride error:", error);
@@ -337,6 +401,11 @@ ridesRouter.post("/:id/cancel", authMiddleware, requireRole("LEADER", "ADMIN"), 
       .update(rides)
       .set({ cancelled: true, updatedAt: new Date().toISOString() })
       .where(eq(rides.id, id));
+
+    // Invalidate caches
+    void cacheInvalidate(buildCacheKey("detail", { rideId: id }));
+    void cacheInvalidatePattern("rides:list:*");
+
     return c.json({ success: true });
   } catch (error) {
     console.error("Cancel ride error:", error);
@@ -362,6 +431,11 @@ ridesRouter.post("/:id/uncancel", authMiddleware, requireRole("LEADER", "ADMIN")
       .update(rides)
       .set({ cancelled: false, updatedAt: new Date().toISOString() })
       .where(eq(rides.id, id));
+
+    // Invalidate caches
+    void cacheInvalidate(buildCacheKey("detail", { rideId: id }));
+    void cacheInvalidatePattern("rides:list:*");
+
     return c.json({ success: true });
   } catch (error) {
     console.error("Uncancel ride error:", error);

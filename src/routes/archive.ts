@@ -2,11 +2,12 @@ import { eq, lt, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db/index.js";
 import {
-  archivedRides,
-  archivedUserOnRides,
-  rides,
-  userOnRides,
+	archivedRides,
+	archivedUserOnRides,
+	rides,
+	userOnRides,
 } from "../db/schema/index.js";
+import { cacheInvalidatePattern } from "../lib/cache.js";
 
 export const archiveRouter = new Hono();
 
@@ -75,6 +76,9 @@ archiveRouter.post("/", async (c) => {
         sql`DELETE FROM "bcc_rides" WHERE "ride_date" < TO_TIMESTAMP(${runDate}, 'YYYY-MM-DD')`,
       );
     });
+
+    // Invalidate all ride caches (bulk operation deleted multiple rides)
+    void cacheInvalidatePattern("rides:*");
 
     return c.json({
       success: true,

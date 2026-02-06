@@ -3,6 +3,7 @@ import "dotenv/config";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { getRedisClient } from "./lib/cache.js";
 import { archiveRouter } from "./routes/archive.js";
 import { generateRouter } from "./routes/generate.js";
 import { repeatingRidesRouter } from "./routes/repeating-rides.js";
@@ -42,9 +43,21 @@ app.route("/archive", archiveRouter);
 app.route("/riderhq", riderhqRouter);
 
 // Health check
-app.get("/health", (c) =>
-  c.json({ status: "ok", timestamp: new Date().toISOString() }),
-);
+app.get("/health", async (c) => {
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+	const redisClient = await getRedisClient();
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+	const redisStatus = redisClient?.isOpen ? "connected" : "disconnected";
+
+	return c.json({
+		status: "ok",
+		timestamp: new Date().toISOString(),
+		cache: {
+			enabled: process.env.CACHE_ENABLED === "true",
+			redis: redisStatus,
+		},
+	});
+});
 
 // 404 handler
 app.notFound((c) => c.json({ error: "Not found" }, 404));
