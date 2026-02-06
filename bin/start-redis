@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Start local Redis container for development
+
+REDIS_CONTAINER_NAME="rides-redis"
+
+if ! [ -x "$(command -v docker)" ]; then
+  echo "Docker is not installed. Please install and try again."
+  exit 1
+fi
+
+if docker ps | grep "$REDIS_CONTAINER_NAME"; then
+  echo "✅ Redis container '$REDIS_CONTAINER_NAME' already running"
+  exit 0
+fi
+
+if docker ps -a | grep "$REDIS_CONTAINER_NAME"; then
+  docker start "$REDIS_CONTAINER_NAME"
+  echo "✅ Redis container '$REDIS_CONTAINER_NAME' started"
+  exit 0
+fi
+
+echo "🚀 Creating Redis container..."
+docker run -d \
+  --name $REDIS_CONTAINER_NAME \
+  -p 6379:6379 \
+  redis:7-alpine && echo "✅ Redis container '$REDIS_CONTAINER_NAME' created"
+
+echo ""
+echo "📝 To enable caching in development, set in .env.local:"
+echo "   CACHE_ENABLED=true"
+echo ""
+echo "🧪 Test connection:"
+echo "   docker exec -it $REDIS_CONTAINER_NAME redis-cli ping"

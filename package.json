@@ -18,7 +18,8 @@
     "db:pump": "bun src/db/pump.ts",
     "db:seed": "DB_SEEDING=true bun src/db/seed.ts",
     "db:studio": "drizzle-kit studio",
-    "startdb": "./bin/start-database"
+    "startdb": "./bin/start-database",
+    "startredis": "./bin/start-redis"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.9",

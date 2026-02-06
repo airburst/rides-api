@@ -73,21 +73,28 @@ CACHE_TTL=300
 
 ### 4. Redis Setup (Optional)
 
-For development without caching, set `CACHE_ENABLED=false` in your `.env` file.
+**By default, caching is disabled in development** (`CACHE_ENABLED=false` in `.env.local`).
 
-For production or to test caching locally:
+To test caching locally, start Redis with Docker:
 
 ```bash
-# Install Redis
-brew install redis  # macOS
-# or
-sudo apt install redis-server  # Linux
+bun run startredis
+```
 
-# Start Redis
-redis-server
+Then enable caching in `.env.local`:
 
-# Test connection
-redis-cli ping  # should return PONG
+```bash
+CACHE_ENABLED=true
+```
+
+**Alternative: Install Redis locally**
+
+```bash
+# macOS
+brew install redis && brew services start redis
+
+# Linux
+sudo apt install redis-server && sudo systemctl start redis-server
 ```
 
 ### 5. Database Setup
@@ -116,12 +123,16 @@ The API will be available at `http://localhost:3001`
 
 ## Available Scripts
 
+### Development
 - `bun run dev` - Start development server with hot reload
-- `bun run build` - Build for production
-- `bun run start` - Start production server
+- `bun run startdb` - Start local PostgreSQL container
+- `bun run startredis` - Start local Redis container (optional)
+- `bun run test` - Run all tests
 - `bun run lint` - Run ESLint with auto-fix
 - `bun run format` - Format code with Prettier
 - `bun run check-types` - TypeScript type checking
+
+### Database
 - `bun run db:generate` - Generate Drizzle migrations
 - `bun run db:migrate` - Run database migrations
 - `bun run db:studio` - Open Drizzle Studio
