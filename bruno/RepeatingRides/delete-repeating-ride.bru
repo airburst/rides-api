@@ -1,0 +1,34 @@
+meta {
+  name: Delete Repeating Ride
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/repeating-rides/{{scheduleId}}?cascade=true
+  body: none
+  auth: inherit
+}
+
+params:query {
+  ~cascade: true
+}
+
+vars:pre-request {
+  scheduleId: schedule-uuid-here
+}
+
+docs {
+  # Delete Repeating Ride
+  
+  Delete a repeating ride template. Requires ADMIN role.
+  
+  ## Authentication
+  Required - Bearer token with ADMIN role
+  
+  ## Path Parameters
+  - `id`: Repeating ride UUID
+  
+  ## Query Parameters
+  - `cascade` (optional): Set to "true" to also soft-delete all future rides from this template
+}

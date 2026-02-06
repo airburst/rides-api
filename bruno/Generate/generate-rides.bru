@@ -1,0 +1,34 @@
+meta {
+  name: Generate Rides
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/generate
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "date": "2026-03-01T00:00:00.000Z"
+  }
+}
+
+docs {
+  # Generate Rides
+  
+  Generate rides from repeating ride templates for the next period.
+  Can be authenticated with either API_KEY (for cron jobs) or user JWT with ADMIN role.
+  
+  ## Authentication
+  Required - API_KEY or Bearer token with ADMIN role
+  
+  ## Request Body (all optional)
+  - `scheduleId`: Generate rides for specific template only (omit to generate from all templates)
+  - `date`: Start date for generation (defaults to next month)
+  
+  ## Example API Key Usage
+  Authorization: Bearer your-api-key-here
+}

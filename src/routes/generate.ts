@@ -1,23 +1,22 @@
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db/index.js";
-import { repeatingRides, rides } from "../db/schema/index.js";
+import { accounts, repeatingRides, rides } from "../db/schema/index.js";
+import { verifyAuth0Token } from "../lib/auth0.js";
 import {
   makeRidesInPeriod,
   updateRRuleStartDate,
   type RepeatingRideDb,
   type RideSet,
 } from "../lib/rrule-utils.js";
-import { verifyAuth0Token } from "../lib/auth0.js";
-import { accounts } from "../db/schema/index.js";
 
 export const generateRouter = new Hono();
 
-type GenerateResult = {
+interface GenerateResult {
   scheduleId?: string;
   count?: number;
   error?: string;
-};
+}
 
 // Helper to create rides from a RideSet
 const createRidesFromSet = async ({
@@ -84,11 +83,12 @@ generateRouter.post("/", async (c) => {
 
       // Look up user
       const account = await db.query.accounts.findFirst({
-        where: eq(accounts.providerAccountId, payload.sub as string),
+        where: eq(accounts.providerAccountId, payload.sub),
         with: { users: true },
       });
 
-      // Must be ADMIN
+      // Must be ADMIN - users is always present due to foreign key
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       if (account?.users?.role === "ADMIN") {
         isUserAuth = true;
       }

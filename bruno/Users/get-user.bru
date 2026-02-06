@@ -1,0 +1,27 @@
+meta {
+  name: Get User
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/users/{{userId}}
+  body: none
+  auth: inherit
+}
+
+vars:pre-request {
+  userId: user-uuid-here
+}
+
+docs {
+  # Get User
+  
+  Get a specific user by ID. Users can only get their own profile unless they are ADMIN.
+  
+  ## Authentication
+  Required - Bearer token (self or ADMIN)
+  
+  ## Path Parameters
+  - `id`: User UUID
+}

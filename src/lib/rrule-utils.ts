@@ -1,7 +1,7 @@
 import pkg from "rrule";
 const { RRule } = pkg;
 
-type RepeatingRideDb = {
+interface RepeatingRideDb {
   id?: string;
   name: string;
   schedule: string;
@@ -14,9 +14,9 @@ type RepeatingRideDb = {
   leader?: string | null;
   notes?: string | null;
   rideLimit?: number;
-};
+}
 
-type TemplateRide = {
+interface TemplateRide {
   name: string;
   rideDate: string;
   destination?: string | null;
@@ -28,13 +28,13 @@ type TemplateRide = {
   notes?: string | null;
   rideLimit?: number;
   scheduleId?: string;
-};
+}
 
-type RideSet = {
+interface RideSet {
   id?: string;
   schedule: string;
   rides: TemplateRide[];
-};
+}
 
 // Check if date is in winter (Oct-Mar)
 const isWinter = (dateString: string): boolean => {
@@ -126,7 +126,7 @@ export const makeRidesInPeriod = (
       ? rideDates.map((r) =>
           generateRide(
             template,
-            changeToWinterTime(r, template.winterStartTime!),
+            changeToWinterTime(r, template.winterStartTime),
           ),
         )
       : rideDates.map((r) => generateRide(template, r.toISOString()));

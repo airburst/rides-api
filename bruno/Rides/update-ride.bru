@@ -1,0 +1,49 @@
+meta {
+  name: Update Ride
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/rides/{{rideId}}
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Updated Ride Name",
+    "distance": 60,
+    "notes": "Updated notes"
+  }
+}
+
+vars:pre-request {
+  rideId: ride-uuid-here
+}
+
+docs {
+  # Update Ride
+  
+  Update an existing ride. Partial updates supported. Requires LEADER or ADMIN role.
+  
+  ## Authentication
+  Required - Bearer token with LEADER or ADMIN role
+  
+  ## Path Parameters
+  - `id`: Ride UUID
+  
+  ## Request Body
+  All fields are optional (partial update):
+  - `name`: Ride name
+  - `rideDate`: ISO datetime string
+  - `distance`: Distance in km
+  - `rideGroup`: Ride group
+  - `destination`: Destination
+  - `meetPoint`: Meeting point
+  - `route`: Route description
+  - `leader`: Ride leader
+  - `notes`: Notes
+  - `rideLimit`: Max riders
+  - `scheduleId`: Repeating ride ID
+}

@@ -1,0 +1,49 @@
+meta {
+  name: Create Repeating Ride
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/repeating-rides
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Tuesday Evening Ride",
+    "schedule": "DTSTART:20260301T183000Z\nRRULE:FREQ=WEEKLY;BYDAY=TU",
+    "rideGroup": "B",
+    "destination": "Box Hill",
+    "distance": 40,
+    "meetPoint": "Kingston Gate",
+    "route": "Via Leatherhead",
+    "leader": "Jane Smith",
+    "notes": "Weekly training ride",
+    "rideLimit": 15,
+    "winterStartTime": "17:30"
+  }
+}
+
+docs {
+  # Create Repeating Ride
+  
+  Create a new repeating ride template. Requires ADMIN role.
+  
+  ## Authentication
+  Required - Bearer token with ADMIN role
+  
+  ## Request Body
+  - `name` (required): Template name (min 3 characters)
+  - `schedule` (required): RRule schedule string
+  - `winterStartTime` (optional): Winter start time override
+  - `rideGroup` (optional): Ride group
+  - `destination` (optional): Destination
+  - `distance` (optional): Distance in km
+  - `meetPoint` (optional): Meeting point
+  - `route` (optional): Route description
+  - `leader` (optional): Default leader
+  - `notes` (optional): Template notes
+  - `rideLimit` (optional): Default max riders (-1 for unlimited)
+}

@@ -1,0 +1,20 @@
+meta {
+  name: List Repeating Rides
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/repeating-rides
+  body: none
+  auth: inherit
+}
+
+docs {
+  # List Repeating Rides
+  
+  List all repeating ride templates. Requires ADMIN role.
+  
+  ## Authentication
+  Required - Bearer token with ADMIN role
+}

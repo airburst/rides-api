@@ -1,0 +1,36 @@
+meta {
+  name: Archive Rides
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/archive
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{apiKey}}
+}
+
+body:json {
+  {
+    "date": "2026-01-01T00:00:00.000Z"
+  }
+}
+
+docs {
+  # Archive Rides
+  
+  Archive old rides (moves them to archived tables and deletes from main tables).
+  Requires API_KEY authentication (for cron jobs).
+  
+  ## Authentication
+  Required - API_KEY in Authorization header as Bearer token
+  
+  ## Request Body (optional)
+  - `date`: Archive rides before this date (defaults to current date)
+  
+  Set the apiKey variable in your environment.
+}

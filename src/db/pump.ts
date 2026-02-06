@@ -19,7 +19,7 @@ const main = async () => {
   const sourceDb = drizzle(sourceUrl, { schema, casing: "snake_case" });
   const db = drizzle(dbUrl, { schema, casing: "snake_case" });
 
-  console.log("Cleaning tables");
+  console.info("Cleaning tables");
 
   for (const table of [
     schema.archivedUserOnRides,
@@ -31,11 +31,11 @@ const main = async () => {
     schema.repeatingRides,
     schema.users,
   ]) {
-    // eslint-disable-next-line drizzle/enforce-delete-with-where
+    // Intentionally deleting all rows for data migration
     await db.delete(table);
   }
 
-  console.log("Data migration started");
+  console.info("Data migration started");
 
   // Users
   const usersData = await sourceDb.execute(sql`select
@@ -45,7 +45,7 @@ const main = async () => {
   from "bcc_users"`);
   // @ts-expect-error - data typing
   await db.insert(schema.users).values(usersData);
-  console.log("Users migrated", usersData.length);
+  console.info("Users migrated", usersData.length);
 
   // Accounts
   const accountsData = await sourceDb.execute(sql`SELECT
@@ -56,7 +56,7 @@ const main = async () => {
   from "bcc_accounts"`);
   // @ts-expect-error - data typing
   await db.insert(schema.accounts).values(accountsData);
-  console.log("Accounts migrated", accountsData.length);
+  console.info("Accounts migrated", accountsData.length);
 
   // Sessions
   const sessionsData = await sourceDb.execute(sql`select
@@ -70,7 +70,7 @@ const main = async () => {
     // @ts-expect-error - data typing
     await db.insert(schema.sessions).values(sessionsData);
   }
-  console.log("Sessions migrated", sessionsData.length);
+  console.info("Sessions migrated", sessionsData.length);
 
   // Rides
   const ridesData = await sourceDb.execute(sql`SELECT
@@ -82,7 +82,7 @@ const main = async () => {
   from "bcc_rides"`);
   // @ts-expect-error - data typing
   await db.insert(schema.rides).values(ridesData);
-  console.log("Rides migrated", ridesData.length);
+  console.info("Rides migrated", ridesData.length);
 
   // Users on rides
   const uorData = await sourceDb.execute(sql`SELECT
@@ -91,7 +91,7 @@ const main = async () => {
   from "bcc_users_on_rides"`);
   // @ts-expect-error - data typing
   await db.insert(schema.userOnRides).values(uorData);
-  console.log("Users on rides migrated", uorData.length);
+  console.info("Users on rides migrated", uorData.length);
 
   // Repeating rides
   const repeatingRidesData = await sourceDb.execute(sql`SELECT
@@ -102,7 +102,7 @@ const main = async () => {
   from "bcc_repeating_rides"`);
   // @ts-expect-error - data typing
   await db.insert(schema.repeatingRides).values(repeatingRidesData);
-  console.log("Repeating rides migrated", repeatingRidesData.length);
+  console.info("Repeating rides migrated", repeatingRidesData.length);
 
   // Archived Rides
   const archivedRidesData = await sourceDb.execute(sql`SELECT
@@ -115,7 +115,7 @@ const main = async () => {
     // @ts-expect-error - data typing
     await db.insert(schema.archivedRides).values(archivedRidesData);
   }
-  console.log("Archived rides migrated", archivedRidesData.length);
+  console.info("Archived rides migrated", archivedRidesData.length);
 
   // Archived users on rides
   const archivedUorData = await sourceDb.execute(sql`SELECT
@@ -126,10 +126,10 @@ const main = async () => {
     // @ts-expect-error - data typing
     await db.insert(schema.archivedUserOnRides).values(archivedUorData);
   }
-  console.log("Archived users on rides migrated", archivedUorData.length);
+  console.info("Archived users on rides migrated", archivedUorData.length);
 
-  console.log("Data migration done");
+  console.info("Data migration done");
   process.exit(0);
 };
 
-main();
+void main();

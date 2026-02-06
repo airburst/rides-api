@@ -1,0 +1,48 @@
+meta {
+  name: Create Ride
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/rides
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Sunday Morning Ride",
+    "rideDate": "2026-03-15T09:00:00.000Z",
+    "distance": 50,
+    "rideGroup": "A",
+    "destination": "Richmond Park",
+    "meetPoint": "Bushy Park Gate",
+    "route": "Via Thames Path",
+    "leader": "John Doe",
+    "notes": "Bring lights and reflective gear",
+    "rideLimit": 20
+  }
+}
+
+docs {
+  # Create Ride
+  
+  Create a new ride. Requires LEADER or ADMIN role.
+  
+  ## Authentication
+  Required - Bearer token with LEADER or ADMIN role
+  
+  ## Request Body
+  - `name` (required): Ride name (min 3 characters)
+  - `rideDate` (required): ISO datetime string
+  - `distance` (required): Distance in km (min 10)
+  - `rideGroup` (optional): Ride group designation
+  - `destination` (optional): Destination location
+  - `meetPoint` (optional): Meeting point
+  - `route` (optional): Route description
+  - `leader` (optional): Ride leader name
+  - `notes` (optional): Additional notes
+  - `rideLimit` (optional): Max riders, defaults to -1 (unlimited)
+  - `scheduleId` (optional): Associated repeating ride ID
+}

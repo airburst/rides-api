@@ -1,0 +1,28 @@
+meta {
+  name: List Users
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/users?q=john
+  body: none
+  auth: inherit
+}
+
+params:query {
+  q: john
+  ~q: 
+}
+
+docs {
+  # List Users
+  
+  List all users with optional search. Requires ADMIN role.
+  
+  ## Authentication
+  Required - Bearer token with ADMIN role
+  
+  ## Query Parameters
+  - `q` (optional): Search query to filter by name or email
+}

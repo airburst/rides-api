@@ -1,0 +1,48 @@
+meta {
+  name: Update User
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/users/{{userId}}
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Updated Name",
+    "mobile": "+44 7700 900000",
+    "emergency": "+44 7700 900001",
+    "preferences": {
+      "units": "miles"
+    }
+  }
+}
+
+vars:pre-request {
+  userId: user-uuid-here
+}
+
+docs {
+  # Update User
+  
+  Update a user profile. Users can only update their own profile unless they are ADMIN.
+  Only ADMINs can change the role field.
+  
+  ## Authentication
+  Required - Bearer token (self or ADMIN)
+  
+  ## Path Parameters
+  - `id`: User UUID
+  
+  ## Request Body (all optional)
+  - `name`: User's name
+  - `mobile`: Mobile phone number
+  - `emergency`: Emergency contact number
+  - `preferences`: User preferences object
+  - `role`: User role (ADMIN only) - "USER", "LEADER", or "ADMIN"
+  - `membershipId`: Membership ID
+  - `membershipStatus`: Membership status
+}

@@ -1,0 +1,27 @@
+meta {
+  name: Get Repeating Ride
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/repeating-rides/{{scheduleId}}
+  body: none
+  auth: inherit
+}
+
+vars:pre-request {
+  scheduleId: schedule-uuid-here
+}
+
+docs {
+  # Get Repeating Ride
+  
+  Get a specific repeating ride template by ID. Requires ADMIN role.
+  
+  ## Authentication
+  Required - Bearer token with ADMIN role
+  
+  ## Path Parameters
+  - `id`: Repeating ride UUID
+}

@@ -5,7 +5,7 @@ import { memberships } from "../db/schema/index.js";
 export const riderhqRouter = new Hono();
 
 // Types
-type MemberData = {
+interface MemberData {
   id: string;
   handle: string;
   member_is_user_bool: boolean;
@@ -19,9 +19,9 @@ type MemberData = {
     guest_bool?: boolean;
     handle?: string;
   };
-};
+}
 
-type Member = {
+interface Member {
   memberId: string;
   userId?: string;
   handle?: string;
@@ -32,12 +32,12 @@ type Member = {
   expires: string;
   isVerified?: boolean;
   isGuest?: boolean;
-};
+}
 
-type MembersResponse = {
+interface MembersResponse {
   data: MemberData[];
   has_more_bool: boolean;
-};
+}
 
 // Transform member data
 const transformMember = (data: MemberData): Member => ({

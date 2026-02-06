@@ -1,0 +1,27 @@
+meta {
+  name: Uncancel Ride
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/rides/{{rideId}}/uncancel
+  body: none
+  auth: inherit
+}
+
+vars:pre-request {
+  rideId: ride-uuid-here
+}
+
+docs {
+  # Uncancel Ride
+  
+  Uncancel a previously cancelled ride. Requires LEADER or ADMIN role.
+  
+  ## Authentication
+  Required - Bearer token with LEADER or ADMIN role
+  
+  ## Path Parameters
+  - `id`: Ride UUID
+}

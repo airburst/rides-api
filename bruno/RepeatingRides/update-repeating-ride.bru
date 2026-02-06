@@ -1,0 +1,49 @@
+meta {
+  name: Update Repeating Ride
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/repeating-rides/{{scheduleId}}
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "name": "Updated Tuesday Ride",
+    "schedule": "DTSTART:20260301T183000Z\nRRULE:FREQ=WEEKLY;BYDAY=TU",
+    "distance": 45
+  }
+}
+
+vars:pre-request {
+  scheduleId: schedule-uuid-here
+}
+
+docs {
+  # Update Repeating Ride
+  
+  Update a repeating ride template. Requires ADMIN role.
+  
+  ## Authentication
+  Required - Bearer token with ADMIN role
+  
+  ## Path Parameters
+  - `id`: Repeating ride UUID
+  
+  ## Request Body
+  All fields required (full replacement):
+  - `name`: Template name
+  - `schedule`: RRule schedule string
+  - `winterStartTime`: Winter start time
+  - `rideGroup`: Ride group
+  - `destination`: Destination
+  - `distance`: Distance in km
+  - `meetPoint`: Meeting point
+  - `route`: Route description
+  - `leader`: Default leader
+  - `notes`: Template notes
+  - `rideLimit`: Default max riders
+}

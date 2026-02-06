@@ -1,0 +1,33 @@
+meta {
+  name: Sync Members
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/riderhq
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{apiKey}}
+}
+
+docs {
+  # Sync Members from RiderHQ
+  
+  Sync member data from RiderHQ API. Truncates and refills the memberships table.
+  Requires API_KEY authentication (for cron jobs).
+  
+  ## Authentication
+  Required - API_KEY in Authorization header as Bearer token
+  
+  ## Configuration
+  Requires the following environment variables:
+  - RIDERHQ_URL
+  - RIDERHQ_ACCOUNT_ID
+  - RIDERHQ_PRIVATE_KEY
+  
+  Set the apiKey variable in your environment.
+}

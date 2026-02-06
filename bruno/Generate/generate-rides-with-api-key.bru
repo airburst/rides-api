@@ -1,0 +1,37 @@
+meta {
+  name: Generate Rides (API Key)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/generate
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{apiKey}}
+}
+
+body:json {
+  {
+    "scheduleId": "schedule-uuid-here",
+    "date": "2026-03-01T00:00:00.000Z"
+  }
+}
+
+docs {
+  # Generate Rides (API Key Auth)
+  
+  Generate rides using API key authentication (for cron jobs).
+  
+  ## Authentication
+  Required - API_KEY in Authorization header as Bearer token
+  
+  ## Request Body (all optional)
+  - `scheduleId`: Generate rides for specific template only
+  - `date`: Start date for generation (defaults to next month)
+  
+  Set the apiKey variable in your environment.
+}

@@ -12,12 +12,16 @@ if (!process.env.DB_SEEDING) {
 }
 
 const main = async () => {
-  const db = drizzle(process.env.DATABASE_URL!, {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL environment variable is required");
+  }
+
+  const db = drizzle(process.env.DATABASE_URL, {
     schema,
     casing: "snake_case",
   });
 
-  console.log("Cleaning tables");
+  console.info("Cleaning tables");
 
   for (const table of [
     schema.sessions,
@@ -27,11 +31,11 @@ const main = async () => {
     schema.repeatingRides,
     schema.users,
   ]) {
-    // eslint-disable-next-line drizzle/enforce-delete-with-where
+    // Intentionally deleting all rows for seeding
     await db.delete(table);
   }
 
-  console.log("Seeding started");
+  console.info("Seeding started");
 
   await seeds.users(db);
   await seeds.sessions(db);
@@ -39,8 +43,8 @@ const main = async () => {
   await seeds.rides(db);
   await seeds.usersOnRides(db);
 
-  console.log("Seeding done");
+  console.info("Seeding done");
   process.exit(0);
 };
 
-main();
+void main();
