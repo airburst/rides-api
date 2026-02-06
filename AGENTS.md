@@ -78,6 +78,7 @@ The project uses GitHub Actions for automated deployment:
 ### Environment Secrets
 
 Production secrets are stored in GitHub Environment settings:
+
 - `SSH_PRIVATE_KEY`
 - `VPS_HOST`
 - `VPS_USER`
@@ -121,7 +122,7 @@ ignores: [
   "**/__tests__/**",
   "src/test/**",
   // ...
-]
+];
 ```
 
 ### Type Errors with `bun:test`
@@ -141,7 +142,7 @@ Make sure `bun-types` is installed and in `tsconfig.json`:
 Use `as any` for flexible mocks:
 
 ```typescript
-findFirst: mock(() => Promise.resolve(null as any))
+findFirst: mock(() => Promise.resolve(null as any));
 ```
 
 ## Authorization Matrix
@@ -150,7 +151,7 @@ findFirst: mock(() => Promise.resolve(null as any))
 
 - **Rides**: Public GET, LEADER/ADMIN for modifications
 - **Repeating Rides**: ADMIN only for all operations
-- **Users**: 
+- **Users**:
   - GET /users/me → Any authenticated user
   - GET /users → ADMIN only
   - GET /users/:id → Self or ADMIN
@@ -163,6 +164,7 @@ findFirst: mock(() => Promise.resolve(null as any))
 ### Production Deployment
 
 Automated via GitHub Actions:
+
 1. Push to `main` branch
 2. CI runs (lint, test, type-check, build)
 3. If CI passes, deploy workflow triggers
@@ -183,6 +185,7 @@ pm2 reload ecosystem.config.cjs
 ## Questions?
 
 For issues or questions:
+
 - Check GitHub Actions logs for CI/CD failures
 - Review test output for failing tests
 - Check VPS logs: `pm2 logs rides-api`
