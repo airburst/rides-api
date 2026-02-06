@@ -121,13 +121,11 @@ export const makeRidesInPeriod = (
   const rideDates = RRule.fromString(schedule).between(start, end);
 
   // Update timings if winterStartTime is set
+  const winterStartTime = template.winterStartTime;
   const rides =
-    typeof template.winterStartTime === "string"
+    typeof winterStartTime === "string"
       ? rideDates.map((r) =>
-          generateRide(
-            template,
-            changeToWinterTime(r, template.winterStartTime),
-          ),
+          generateRide(template, changeToWinterTime(r, winterStartTime)),
         )
       : rideDates.map((r) => generateRide(template, r.toISOString()));
 
