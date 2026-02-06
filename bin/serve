@@ -9,6 +9,13 @@ npm run startdb
 echo "Waiting for postgres..."
 sleep 2
 
-npm run db:push
-npm run db:pump
+npm run db:migrate
+
+# Only pump data if SOURCE_URL is set
+if [ -n "$SOURCE_URL" ]; then
+  npm run db:pump
+else
+  echo "Skipping db:pump (SOURCE_URL not set)"
+fi
+
 npm run dev
