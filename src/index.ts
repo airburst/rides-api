@@ -3,6 +3,7 @@ import "dotenv/config";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import pkg from "../package.json" assert { type: "json" };
 import { getRedisClient } from "./lib/cache.js";
 import { archiveRouter } from "./routes/archive.js";
 import { generateRouter } from "./routes/generate.js";
@@ -19,13 +20,12 @@ app.use(
   "*",
   cors({
     origin: (origin) => {
-      const allowed = [
-        "http://localhost:3000",
-        "https://bcc-rides.vercel.app",
-      ];
+      const allowed = ["http://localhost:3000", "https://bcc-rides.vercel.app"];
       if (allowed.includes(origin)) return origin;
       // Allow Vercel preview deployments
-      if (/^https:\/\/bcc-rides-.*-airbursts-projects\.vercel\.app$/.test(origin)) {
+      if (
+        /^https:\/\/bcc-rides-.*-airbursts-projects\.vercel\.app$/.test(origin)
+      ) {
         return origin;
       }
       return null;
@@ -44,19 +44,20 @@ app.route("/riderhq", riderhqRouter);
 
 // Health check
 app.get("/health", async (c) => {
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-	const redisClient = await getRedisClient();
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-	const redisStatus = redisClient?.isOpen ? "connected" : "disconnected";
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const redisClient = await getRedisClient();
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  const redisStatus = redisClient?.isOpen ? "connected" : "disconnected";
 
-	return c.json({
-		status: "ok",
-		timestamp: new Date().toISOString(),
-		cache: {
-			enabled: process.env.CACHE_ENABLED === "true",
-			redis: redisStatus,
-		},
-	});
+  return c.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    version: pkg.version,
+    cache: {
+      enabled: process.env.CACHE_ENABLED === "true",
+      redis: redisStatus,
+    },
+  });
 });
 
 // 404 handler
