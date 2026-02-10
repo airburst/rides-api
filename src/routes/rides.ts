@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gte, like, lte } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../db/index.js";
@@ -36,8 +36,36 @@ const updateRideSchema = createRideSchema.partial();
 
 export const ridesRouter = new Hono<{ Variables: { user?: AuthUser } }>();
 
-// GET /rides?start=2024-01-01&end=2024-12-31
+// GET /rides?start=2024-01-01&end=2024-12-31&shortId=abc123
 ridesRouter.get("/", optionalAuth, async (c) => {
+	const shortId = c.req.query("shortId");
+
+	// Handle short ID lookup - bypass date filtering and caching
+	if (shortId) {
+		try {
+			const result = await db.query.rides.findFirst({
+				with: {
+					users: {
+						columns: { notes: true, createdAt: true },
+						with: { user: true },
+						orderBy: (userOnRides, { asc }) => [asc(userOnRides.createdAt)],
+					},
+				},
+				where: and(like(rides.id, `%${shortId}`), eq(rides.deleted, false)),
+			});
+
+			if (!result) {
+				return c.json({ error: "Ride not found" }, 404);
+			}
+
+			return c.json({ ride: result });
+		} catch (error) {
+			console.error("Error fetching ride by short ID:", error);
+			return c.json({ error: "Failed to fetch ride" }, 500);
+		}
+	}
+
+	// Normal date-based listing
 	const start = c.req.query("start") ?? new Date().toISOString().split("T")[0];
 	const end = c.req.query("end") ?? "2099-12-31";
 
