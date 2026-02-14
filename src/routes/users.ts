@@ -201,10 +201,10 @@ usersRouter.post("/:id/avatar", authMiddleware, async (c) => {
       return c.json({ error: "File must be an image" }, 400);
     }
 
-    // Validate file size (4MB)
-    const MAX_FILE_SIZE = 4 * 1024 * 1024;
+    // Validate file size (8MB)
+    const MAX_FILE_SIZE = 8 * 1024 * 1024;
     if (file.size > MAX_FILE_SIZE) {
-      return c.json({ error: "File size exceeds 4MB limit" }, 400);
+      return c.json({ error: "File size exceeds 8MB limit" }, 400);
     }
 
     // Convert File to Buffer
