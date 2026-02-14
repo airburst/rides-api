@@ -1,6 +1,6 @@
 {
   "name": "rides-api",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
   "scripts": {
     "dev": "bun --watch src/index.ts",
@@ -30,6 +30,7 @@
     "postgres": "^3.4.8",
     "redis": "^5.10.0",
     "rrule": "^2.8.1",
+    "sharp": "^0.34.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {

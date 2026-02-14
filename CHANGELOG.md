@@ -1,0 +1,31 @@
+# Change Log
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](http://keepachangelog.com/)
+and this project adheres to [Semantic Versioning](http://semver.org/).
+
+## 1.1.0 - 2026-02-14
+
+### Added
+
+- Avatar upload endpoint `POST /users/:id/avatar`
+  - Accepts multipart/form-data with image files (PNG, JPG, GIF, WebP)
+  - 4MB file size limit with validation
+  - Automatic image processing using Sharp library
+  - Generates two WebP versions: 40x40px thumbnail and 120x120px standard
+  - Stores files in `public/avatars/` directory
+  - Authorization: users can update own avatar, admins can update any
+- Static file serving for `/avatars/*` route
+- Database schema: added `imageLarge` column to `bcc_users` table
+- Database migration: `0006_wandering_quentin_quire.sql`
+
+### Dependencies
+
+- Added `sharp@0.34.5` for image processing
+
+### Technical Notes
+
+- Avatar files named as: `{userId}-thumb.webp` (40px) and `{userId}.webp` (120px)
+- Database stores relative paths: `/avatars/{userId}-thumb.webp` and `/avatars/{userId}.webp`
+- Backwards compatible with existing Gravatar and Auth0 avatar URLs

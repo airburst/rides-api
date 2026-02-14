@@ -1,4 +1,5 @@
 import { serve } from "@hono/node-server";
+import { serveStatic } from "@hono/node-server/serve-static";
 import "dotenv/config";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -33,6 +34,9 @@ app.use(
     credentials: true,
   }),
 );
+
+// Static file serving
+app.use("/avatars/*", serveStatic({ root: "./public" }));
 
 // Routes
 app.route("/rides", ridesRouter);
