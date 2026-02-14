@@ -1,9 +1,15 @@
 import { asc, eq, ilike, or } from "drizzle-orm";
 import { Hono } from "hono";
+import { join } from "node:path";
+import sharp from "sharp";
 import { z } from "zod";
 import { db } from "../db/index.js";
 import { users } from "../db/schema/index.js";
-import { authMiddleware, requireRole, type AuthUser } from "../middleware/auth.js";
+import {
+  authMiddleware,
+  requireRole,
+  type AuthUser,
+} from "../middleware/auth.js";
 
 export const usersRouter = new Hono<{ Variables: { user: AuthUser } }>();
 
@@ -155,8 +161,10 @@ usersRouter.patch("/:id", authMiddleware, async (c) => {
   if (data.emergency !== undefined) updateData.emergency = data.emergency;
   if (data.preferences !== undefined) updateData.preferences = data.preferences;
   if (data.role !== undefined) updateData.role = data.role;
-  if (data.membershipId !== undefined) updateData.membershipId = data.membershipId;
-  if (data.membershipStatus !== undefined) updateData.membershipStatus = data.membershipStatus;
+  if (data.membershipId !== undefined)
+    updateData.membershipId = data.membershipId;
+  if (data.membershipStatus !== undefined)
+    updateData.membershipStatus = data.membershipStatus;
 
   try {
     await db.update(users).set(updateData).where(eq(users.id, id));
@@ -164,5 +172,81 @@ usersRouter.patch("/:id", authMiddleware, async (c) => {
   } catch (error) {
     console.error("Update user error:", error);
     return c.json({ error: "Failed to update user" }, 500);
+  }
+});
+
+// POST /users/:id/avatar - Upload avatar image
+usersRouter.post("/:id/avatar", authMiddleware, async (c) => {
+  const authUser = c.get("user");
+  const id = c.req.param("id");
+
+  // Users can only update their own avatar, admins can update anyone
+  const isSelf = authUser.id === id;
+  const isAdmin = authUser.role === "ADMIN";
+
+  if (!isSelf && !isAdmin) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  try {
+    const formData = await c.req.formData();
+    const file = formData.get("avatar");
+
+    if (!file || !(file instanceof File)) {
+      return c.json({ error: "No file provided" }, 400);
+    }
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      return c.json({ error: "File must be an image" }, 400);
+    }
+
+    // Validate file size (4MB)
+    const MAX_FILE_SIZE = 4 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      return c.json({ error: "File size exceeds 4MB limit" }, 400);
+    }
+
+    // Convert File to Buffer
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // Process images with Sharp
+    const publicDir = join(process.cwd(), "public", "avatars");
+
+    // Create thumbnail (40x40)
+    const thumbPath = join(publicDir, `${id}-thumb.webp`);
+    await sharp(buffer)
+      .resize(40, 40, { fit: "cover", position: "center" })
+      .webp({ quality: 80 })
+      .toFile(thumbPath);
+
+    // Create standard size (120x120)
+    const standardPath = join(publicDir, `${id}.webp`);
+    await sharp(buffer)
+      .resize(120, 120, { fit: "cover", position: "center" })
+      .webp({ quality: 85 })
+      .toFile(standardPath);
+
+    // Update database with relative paths
+    const imagePath = `/avatars/${id}-thumb.webp`;
+    const imageLargePath = `/avatars/${id}.webp`;
+
+    await db
+      .update(users)
+      .set({
+        image: imagePath,
+        imageLarge: imageLargePath,
+      })
+      .where(eq(users.id, id));
+
+    return c.json({
+      success: true,
+      image: imagePath,
+      imageLarge: imageLargePath,
+    });
+  } catch (error) {
+    console.error("Avatar upload error:", error);
+    return c.json({ error: "Failed to upload avatar" }, 500);
   }
 });

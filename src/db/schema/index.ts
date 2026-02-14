@@ -21,6 +21,7 @@ export const users = createTable(
     email: t.varchar({ length: 255 }).notNull(),
     emailVerified: t.timestamp({ precision: 3, withTimezone: true }),
     image: t.text(),
+    imageLarge: t.text(),
     mobile: t.varchar({ length: 255 }),
     emergency: t.varchar({ length: 255 }),
     role: roleEnum().default("USER"),

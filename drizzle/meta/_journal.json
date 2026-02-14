@@ -43,6 +43,13 @@
       "when": 1759391221275,
       "tag": "0005_loose_dreaming_celestial",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1771092289619,
+      "tag": "0006_wandering_quentin_quire",
+      "breakpoints": true
     }
   ]
 }
