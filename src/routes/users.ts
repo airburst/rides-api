@@ -221,10 +221,10 @@ usersRouter.post("/:id/avatar", authMiddleware, async (c) => {
       .webp({ quality: 80 })
       .toFile(thumbPath);
 
-    // Create standard size (120x120)
+    // Create standard size (240x240)
     const standardPath = join(publicDir, `${id}.webp`);
     await sharp(buffer)
-      .resize(120, 120, { fit: "cover", position: "center" })
+      .resize(240, 240, { fit: "cover", position: "center" })
       .webp({ quality: 85 })
       .toFile(standardPath);
 

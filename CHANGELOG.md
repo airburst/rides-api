@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   - Accepts multipart/form-data with image files (PNG, JPG, GIF, WebP)
   - 4MB file size limit with validation
   - Automatic image processing using Sharp library
-  - Generates two WebP versions: 40x40px thumbnail and 120x120px standard
+  - Generates two WebP versions: 40x40px thumbnail and 240x240px standard
   - Stores files in `public/avatars/` directory
   - Authorization: users can update own avatar, admins can update any
 - Static file serving for `/avatars/*` route
