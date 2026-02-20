@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.5.0 - 2026-02-20
+
+### Added
+
+- GitHub Actions cron workflow: generate repeating rides (1st of month, 02:00 UTC)
+- GitHub Actions cron workflow: archive past rides (1st of month, 02:05 UTC)
+- Both workflows support manual trigger via `workflow_dispatch`
+
 ## 1.4.0 - 2026-02-20
 
 ### Added
