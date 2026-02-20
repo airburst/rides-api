@@ -20,7 +20,7 @@
     "db:studio": "drizzle-kit studio",
     "startdb": "./bin/start-database",
     "startredis": "./bin/start-redis",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.9",
