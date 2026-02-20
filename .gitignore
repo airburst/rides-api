@@ -6,3 +6,5 @@ dist/
 bun.lockb
 public/avatars/*
 !public/avatars/.gitkeep
+
+.claude/settings.local.json

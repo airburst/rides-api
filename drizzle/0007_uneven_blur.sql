@@ -1,0 +1,2 @@
+CREATE INDEX "idx_accounts_provider_account_id" ON "bcc_accounts" USING btree ("provider_account_id");--> statement-breakpoint
+CREATE INDEX "idx_rides_schedule_date" ON "bcc_rides" USING btree ("schedule_id","ride_date");

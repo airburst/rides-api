@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.3.0 - 2026-02-20
+
+### Added
+
+- Graceful shutdown: SIGTERM/SIGINT handlers drain HTTP server, Redis, and DB pool
+- Database index on `bcc_accounts.provider_account_id` for faster auth middleware lookups
+- Composite database index on `bcc_rides (schedule_id, ride_date)` for cascade-delete queries
+
+### Changed
+
+- Explicit DB connection pool options: `max: 10`, `idle_timeout: 20s`, `max_lifetime: 1800s`
+- Exported postgres client (`sqlClient`) from `src/db/index.ts` for shutdown access
+
+### Migrations
+
+- `0007_uneven_blur.sql`: creates the two new indexes
+
 ## 1.1.0 - 2026-02-14
 
 ### Added
