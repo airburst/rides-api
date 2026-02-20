@@ -1,6 +1,6 @@
 {
   "name": "rides-api",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "type": "module",
   "scripts": {
     "dev": "bun --watch src/index.ts",
@@ -19,7 +19,8 @@
     "db:seed": "DB_SEEDING=true bun src/db/seed.ts",
     "db:studio": "drizzle-kit studio",
     "startdb": "./bin/start-database",
-    "startredis": "./bin/start-redis"
+    "startredis": "./bin/start-redis",
+    "prepare": "husky"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.9",
@@ -41,6 +42,7 @@
     "drizzle-kit": "^0.31.8",
     "eslint": "^9.39.2",
     "eslint-plugin-unused-imports": "^4.3.0",
+    "husky": "^9.1.7",
     "prettier": "^3.8.1",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.54.0"
