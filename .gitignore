@@ -4,3 +4,5 @@ dist/
 .env.local
 *.log
 bun.lockb
+public/avatars/*
+!public/avatars/.gitkeep
