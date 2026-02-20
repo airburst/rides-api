@@ -64,6 +64,7 @@ export const accounts = createTable(
   (table) => [
     t.primaryKey({ columns: [table.provider, table.providerAccountId] }),
     t.index("account_userId_idx").on(table.userId),
+    t.index("idx_accounts_provider_account_id").on(table.providerAccountId),
   ],
 );
 
@@ -96,6 +97,7 @@ export const rides = createTable(
   (table) => [
     t.index().on(table.name),
     t.index("idx_rides_date_deleted").on(table.rideDate, table.deleted),
+    t.index("idx_rides_schedule_date").on(table.scheduleId, table.rideDate),
   ],
 );
 
