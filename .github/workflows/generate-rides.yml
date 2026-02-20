@@ -1,0 +1,34 @@
+name: Generate Repeating Rides
+
+on:
+  schedule:
+    - cron: "0 2 1 * *" # 1st of every month at 02:00 UTC
+  workflow_dispatch: # Allow manual triggers
+
+jobs:
+  generate:
+    name: Generate rides for next month
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Generate rides
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          API_KEY: ${{ secrets.API_KEY }}
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            "http://$VPS_HOST:3001/generate" \
+            -H "Authorization: Bearer $API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+
+          http_code=$(echo "$response" | tail -1)
+          body=$(echo "$response" | head -n -1)
+
+          echo "Status: $http_code"
+          echo "Response: $body"
+
+          if [ "$http_code" != "200" ]; then
+            echo "Failed to generate rides"
+            exit 1
+          fi
