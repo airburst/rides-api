@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.4.0 - 2026-02-20
+
+### Added
+
+- Husky pre-commit hook enforcing `lint`, `check-types`, and `test`
+- `CLAUDE.md` with architecture overview, commands, and commit/PR workflow
+
+### Dependencies
+
+- Added `husky@9.1.7` for git hooks
+
 ## 1.3.0 - 2026-02-20
 
 ### Added
