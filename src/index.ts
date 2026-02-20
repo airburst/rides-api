@@ -75,9 +75,9 @@ app.onError((err, c) => {
 });
 
 const port = process.env.PORT ? parseInt(process.env.PORT) : 3001;
+const server = serve({ fetch: app.fetch, port, hostname: "0.0.0.0" });
 
 console.info(`Starting server on port ${port}...`);
-const server = serve({ fetch: app.fetch, port, hostname: "0.0.0.0" });
 console.info(`Server running on http://localhost:${port}`);
 
 async function shutdown() {
