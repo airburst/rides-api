@@ -5,7 +5,8 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import pkg from "../package.json" assert { type: "json" };
-import { getRedisClient } from "./lib/cache.js";
+import { sqlClient } from "./db/index.js";
+import { closeRedisConnection, getRedisClient } from "./lib/cache.js";
 import { archiveRouter } from "./routes/archive.js";
 import { generateRouter } from "./routes/generate.js";
 import { repeatingRidesRouter } from "./routes/repeating-rides.js";
@@ -76,5 +77,17 @@ app.onError((err, c) => {
 const port = process.env.PORT ? parseInt(process.env.PORT) : 3001;
 
 console.info(`Starting server on port ${port}...`);
-serve({ fetch: app.fetch, port, hostname: "0.0.0.0" });
+const server = serve({ fetch: app.fetch, port, hostname: "0.0.0.0" });
 console.info(`Server running on http://localhost:${port}`);
+
+async function shutdown() {
+  console.info("Shutting down...");
+  server.close();
+  await closeRedisConnection();
+  await sqlClient.end();
+  console.info("Shutdown complete");
+  process.exit(0);
+}
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
