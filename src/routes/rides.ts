@@ -4,17 +4,17 @@ import { z } from "zod";
 import { db } from "../db/index.js";
 import { rides, userOnRides } from "../db/schema/index.js";
 import {
-	buildCacheKey,
-	cacheGet,
-	cacheInvalidate,
-	cacheInvalidatePattern,
-	cacheSet,
+  buildCacheKey,
+  cacheGet,
+  cacheInvalidate,
+  cacheInvalidatePattern,
+  cacheSet,
 } from "../lib/cache.js";
 import {
-	authMiddleware,
-	optionalAuth,
-	requireRole,
-	type AuthUser,
+  authMiddleware,
+  optionalAuth,
+  requireRole,
+  type AuthUser,
 } from "../middleware/auth.js";
 
 // Validation schemas
@@ -38,125 +38,129 @@ export const ridesRouter = new Hono<{ Variables: { user?: AuthUser } }>();
 
 // GET /rides?start=2024-01-01&end=2024-12-31&shortId=abc123
 ridesRouter.get("/", optionalAuth, async (c) => {
-	const shortId = c.req.query("shortId");
+  const shortId = c.req.query("shortId");
 
-	// Handle short ID lookup - bypass date filtering and caching
-	if (shortId) {
-		try {
-			const result = await db.query.rides.findFirst({
-				with: {
-					users: {
-						columns: { notes: true, createdAt: true },
-						with: { user: true },
-						orderBy: (userOnRides, { asc }) => [asc(userOnRides.createdAt)],
-					},
-				},
-				where: and(like(rides.id, `%${shortId}`), eq(rides.deleted, false)),
-			});
+  // Handle short ID lookup - bypass date filtering and caching
+  if (shortId) {
+    try {
+      const result = await db.query.rides.findFirst({
+        with: {
+          users: {
+            columns: { notes: true, createdAt: true },
+            with: { user: true },
+            orderBy: (userOnRides, { asc }) => [asc(userOnRides.createdAt)],
+          },
+        },
+        where: and(like(rides.id, `%${shortId}`), eq(rides.deleted, false)),
+      });
 
-			if (!result) {
-				return c.json({ error: "Ride not found" }, 404);
-			}
+      if (!result) {
+        return c.json({ error: "Ride not found" }, 404);
+      }
 
-			return c.json({ ride: result });
-		} catch (error) {
-			console.error("Error fetching ride by short ID:", error);
-			return c.json({ error: "Failed to fetch ride" }, 500);
-		}
-	}
+      return c.json({ ride: result });
+    } catch (error) {
+      console.error("Error fetching ride by short ID:", error);
+      return c.json({ error: "Failed to fetch ride" }, 500);
+    }
+  }
 
-	// Normal date-based listing
-	const start = c.req.query("start") ?? new Date().toISOString().split("T")[0];
-	const end = c.req.query("end") ?? "2099-12-31";
+  // Normal date-based listing
+  const start = c.req.query("start") ?? new Date().toISOString().split("T")[0];
+  const end = c.req.query("end") ?? "2099-12-31";
 
-	// Build cache key
-	const cacheKey = buildCacheKey("list", { date: `${start}:${end}`, limit: 0, offset: 0 });
+  // Build cache key
+  const cacheKey = buildCacheKey("list", {
+    date: `${start}:${end}`,
+    limit: 0,
+    offset: 0,
+  });
 
-	try {
-		// Try cache first
-		const cached = await cacheGet<{ rides: unknown[] }>(cacheKey);
-		if (cached) {
-			return c.json(cached);
-		}
+  try {
+    // Try cache first
+    const cached = await cacheGet<{ rides: unknown[] }>(cacheKey);
+    if (cached) {
+      return c.json(cached);
+    }
 
-		// Cache miss - query database
-		const result = await db.query.rides.findMany({
-			columns: {
-				id: true,
-				name: true,
-				rideGroup: true,
-				rideDate: true,
-				destination: true,
-				distance: true,
-				rideLimit: true,
-				cancelled: true,
-				createdAt: true,
-			},
-			with: {
-				users: {
-					columns: { userId: true },
-				},
-			},
-			where: and(
-				lte(rides.rideDate, `${end}T23:59:59`),
-				gte(rides.rideDate, start),
-				eq(rides.deleted, false),
-			),
-			orderBy: [asc(rides.rideDate), asc(rides.name), desc(rides.distance)],
-		});
+    // Cache miss - query database
+    const result = await db.query.rides.findMany({
+      columns: {
+        id: true,
+        name: true,
+        rideGroup: true,
+        rideDate: true,
+        destination: true,
+        distance: true,
+        rideLimit: true,
+        cancelled: true,
+        createdAt: true,
+      },
+      with: {
+        users: {
+          columns: { userId: true },
+        },
+      },
+      where: and(
+        lte(rides.rideDate, `${end}T23:59:59Z`),
+        gte(rides.rideDate, `${start}T00:00:00Z`),
+        eq(rides.deleted, false),
+      ),
+      orderBy: [asc(rides.rideDate), asc(rides.name), desc(rides.distance)],
+    });
 
-		const response = { rides: result };
+    const response = { rides: result };
 
-		// Store in cache
-		void cacheSet(cacheKey, response);
+    // Store in cache
+    void cacheSet(cacheKey, response);
 
-		return c.json(response);
-	} catch (error) {
-		console.error("Error fetching rides:", error);
-		return c.json({ error: "Failed to fetch rides" }, 500);
-	}
+    return c.json(response);
+  } catch (error) {
+    console.error("Error fetching rides:", error);
+    return c.json({ error: "Failed to fetch rides" }, 500);
+  }
 });
 
 // GET /rides/:id
 ridesRouter.get("/:id", optionalAuth, async (c) => {
-	const id = c.req.param("id");
+  const id = c.req.param("id");
 
-	// Build cache key
-	const cacheKey = buildCacheKey("detail", { rideId: id });
+  // Build cache key
+  const cacheKey = buildCacheKey("detail", { rideId: id });
 
-	try {
-		// Try cache first
-		const cached = await cacheGet<{ ride: unknown }>(cacheKey);
-		if (cached) {
-			return c.json(cached);
-		}
+  try {
+    // Try cache first
+    const cached = await cacheGet<{ ride: unknown }>(cacheKey);
+    if (cached) {
+      return c.json(cached);
+    }
 
-		// Cache miss - query database
-		const result = await db.query.rides.findFirst({
-			with: {
-				users: {
-					columns: { notes: true, createdAt: true },
-					with: { user: true },
-					orderBy: (userOnRides, { asc }) => [asc(userOnRides.createdAt)],
-				},
-			},
-			where: and(eq(rides.id, id), eq(rides.deleted, false)),
-		});
+    // Cache miss - query database
+    const result = await db.query.rides.findFirst({
+      with: {
+        users: {
+          columns: { notes: true, createdAt: true },
+          with: { user: true },
+          orderBy: (userOnRides, { asc }) => [asc(userOnRides.createdAt)],
+        },
+      },
+      where: and(eq(rides.id, id), eq(rides.deleted, false)),
+    });
 
-		if (!result) {
-			return c.json({ error: "Ride not found" }, 404);
-		}
+    if (!result) {
+      return c.json({ error: "Ride not found" }, 404);
+    }
 
-		const response = { ride: result };
+    const response = { ride: result };
 
-		// Store in cache
-		void cacheSet(cacheKey, response);
+    // Store in cache
+    void cacheSet(cacheKey, response);
 
-		return c.json(response);
-	} catch (error) {
-		console.error("Error fetching ride:", error);
-		return c.json({ error: "Failed to fetch ride" }, 500);
-	}
+    return c.json(response);
+  } catch (error) {
+    console.error("Error fetching ride:", error);
+    return c.json({ error: "Failed to fetch ride" }, 500);
+  }
 });
 
 // POST /rides/:id/join
@@ -278,195 +282,226 @@ ridesRouter.patch("/:id/notes", authMiddleware, async (c) => {
 });
 
 // POST /rides - Create a new ride (LEADER/ADMIN only)
-ridesRouter.post("/", authMiddleware, requireRole("LEADER", "ADMIN"), async (c) => {
-  let body: unknown;
-  try {
-    body = await c.req.json();
-  } catch {
-    return c.json({ error: "Invalid request body" }, 400);
-  }
+ridesRouter.post(
+  "/",
+  authMiddleware,
+  requireRole("LEADER", "ADMIN"),
+  async (c) => {
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid request body" }, 400);
+    }
 
-  const result = createRideSchema.safeParse(body);
-  if (!result.success) {
-    return c.json(
-      { error: "Validation failed", details: z.treeifyError(result.error) },
-      400,
-    );
-  }
+    const result = createRideSchema.safeParse(body);
+    if (!result.success) {
+      return c.json(
+        { error: "Validation failed", details: z.treeifyError(result.error) },
+        400,
+      );
+    }
 
-  const data = result.data;
-  const id = crypto.randomUUID();
+    const data = result.data;
+    const id = crypto.randomUUID();
 
-  try {
-    await db.insert(rides).values({
-      id,
-      name: data.name,
-      rideDate: data.rideDate,
-      distance: data.distance,
-      rideGroup: data.rideGroup ?? null,
-      destination: data.destination ?? null,
-      meetPoint: data.meetPoint ?? null,
-      route: data.route ?? null,
-      leader: data.leader ?? null,
-      notes: data.notes ?? null,
-      rideLimit: data.rideLimit,
-      scheduleId: data.scheduleId ?? null,
-    });
+    try {
+      await db.insert(rides).values({
+        id,
+        name: data.name,
+        rideDate: data.rideDate,
+        distance: data.distance,
+        rideGroup: data.rideGroup ?? null,
+        destination: data.destination ?? null,
+        meetPoint: data.meetPoint ?? null,
+        route: data.route ?? null,
+        leader: data.leader ?? null,
+        notes: data.notes ?? null,
+        rideLimit: data.rideLimit,
+        scheduleId: data.scheduleId ?? null,
+      });
 
-    // Invalidate all ride caches
-    void cacheInvalidatePattern("rides:*");
+      // Invalidate all ride caches
+      void cacheInvalidatePattern("rides:*");
 
-    return c.json({ success: true, id }, 201);
-  } catch (error) {
-    console.error("Create ride error:", error);
-    return c.json({ error: "Failed to create ride" }, 500);
-  }
-});
+      return c.json({ success: true, id }, 201);
+    } catch (error) {
+      console.error("Create ride error:", error);
+      return c.json({ error: "Failed to create ride" }, 500);
+    }
+  },
+);
 
 // PUT /rides/:id - Update a ride (LEADER/ADMIN only)
-ridesRouter.put("/:id", authMiddleware, requireRole("LEADER", "ADMIN"), async (c) => {
-  const id = c.req.param("id");
+ridesRouter.put(
+  "/:id",
+  authMiddleware,
+  requireRole("LEADER", "ADMIN"),
+  async (c) => {
+    const id = c.req.param("id");
 
-  let body: unknown;
-  try {
-    body = await c.req.json();
-  } catch {
-    return c.json({ error: "Invalid request body" }, 400);
-  }
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid request body" }, 400);
+    }
 
-  const result = updateRideSchema.safeParse(body);
-  if (!result.success) {
-    return c.json(
-      { error: "Validation failed", details: z.treeifyError(result.error) },
-      400,
-    );
-  }
+    const result = updateRideSchema.safeParse(body);
+    if (!result.success) {
+      return c.json(
+        { error: "Validation failed", details: z.treeifyError(result.error) },
+        400,
+      );
+    }
 
-  // Check ride exists
-  const existing = await db.query.rides.findFirst({
-    where: and(eq(rides.id, id), eq(rides.deleted, false)),
-  });
+    // Check ride exists
+    const existing = await db.query.rides.findFirst({
+      where: and(eq(rides.id, id), eq(rides.deleted, false)),
+    });
 
-  if (!existing) {
-    return c.json({ error: "Ride not found" }, 404);
-  }
+    if (!existing) {
+      return c.json({ error: "Ride not found" }, 404);
+    }
 
-  const data = result.data;
+    const data = result.data;
 
-  // Build update object, only including provided fields
-  const updateData: Record<string, unknown> = { updatedAt: new Date().toISOString() };
-  if (data.name !== undefined) updateData.name = data.name;
-  if (data.rideDate !== undefined) updateData.rideDate = data.rideDate;
-  if (data.distance !== undefined) updateData.distance = data.distance;
-  if (data.rideGroup !== undefined) updateData.rideGroup = data.rideGroup || null;
-  if (data.destination !== undefined) updateData.destination = data.destination || null;
-  if (data.meetPoint !== undefined) updateData.meetPoint = data.meetPoint || null;
-  if (data.route !== undefined) updateData.route = data.route || null;
-  if (data.leader !== undefined) updateData.leader = data.leader || null;
-  if (data.notes !== undefined) updateData.notes = data.notes || null;
-  if (data.rideLimit !== undefined) updateData.rideLimit = data.rideLimit;
-  if (data.scheduleId !== undefined) updateData.scheduleId = data.scheduleId || null;
+    // Build update object, only including provided fields
+    const updateData: Record<string, unknown> = {
+      updatedAt: new Date().toISOString(),
+    };
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.rideDate !== undefined) updateData.rideDate = data.rideDate;
+    if (data.distance !== undefined) updateData.distance = data.distance;
+    if (data.rideGroup !== undefined)
+      updateData.rideGroup = data.rideGroup || null;
+    if (data.destination !== undefined)
+      updateData.destination = data.destination || null;
+    if (data.meetPoint !== undefined)
+      updateData.meetPoint = data.meetPoint || null;
+    if (data.route !== undefined) updateData.route = data.route || null;
+    if (data.leader !== undefined) updateData.leader = data.leader || null;
+    if (data.notes !== undefined) updateData.notes = data.notes || null;
+    if (data.rideLimit !== undefined) updateData.rideLimit = data.rideLimit;
+    if (data.scheduleId !== undefined)
+      updateData.scheduleId = data.scheduleId || null;
 
-  try {
-    await db.update(rides).set(updateData).where(eq(rides.id, id));
+    try {
+      await db.update(rides).set(updateData).where(eq(rides.id, id));
 
-    // Invalidate caches
-    void cacheInvalidate(buildCacheKey("detail", { rideId: id }));
-    void cacheInvalidatePattern("rides:list:*");
+      // Invalidate caches
+      void cacheInvalidate(buildCacheKey("detail", { rideId: id }));
+      void cacheInvalidatePattern("rides:list:*");
 
-    return c.json({ success: true, id });
-  } catch (error) {
-    console.error("Update ride error:", error);
-    return c.json({ error: "Failed to update ride" }, 500);
-  }
-});
+      return c.json({ success: true, id });
+    } catch (error) {
+      console.error("Update ride error:", error);
+      return c.json({ error: "Failed to update ride" }, 500);
+    }
+  },
+);
 
 // DELETE /rides/:id - Soft delete a ride (LEADER/ADMIN only)
-ridesRouter.delete("/:id", authMiddleware, requireRole("LEADER", "ADMIN"), async (c) => {
-  const id = c.req.param("id");
+ridesRouter.delete(
+  "/:id",
+  authMiddleware,
+  requireRole("LEADER", "ADMIN"),
+  async (c) => {
+    const id = c.req.param("id");
 
-  // Check ride exists
-  const existing = await db.query.rides.findFirst({
-    where: and(eq(rides.id, id), eq(rides.deleted, false)),
-  });
+    // Check ride exists
+    const existing = await db.query.rides.findFirst({
+      where: and(eq(rides.id, id), eq(rides.deleted, false)),
+    });
 
-  if (!existing) {
-    return c.json({ error: "Ride not found" }, 404);
-  }
+    if (!existing) {
+      return c.json({ error: "Ride not found" }, 404);
+    }
 
-  try {
-    await db
-      .update(rides)
-      .set({ deleted: true, updatedAt: new Date().toISOString() })
-      .where(eq(rides.id, id));
+    try {
+      await db
+        .update(rides)
+        .set({ deleted: true, updatedAt: new Date().toISOString() })
+        .where(eq(rides.id, id));
 
-    // Invalidate caches
-    void cacheInvalidate(buildCacheKey("detail", { rideId: id }));
-    void cacheInvalidatePattern("rides:list:*");
+      // Invalidate caches
+      void cacheInvalidate(buildCacheKey("detail", { rideId: id }));
+      void cacheInvalidatePattern("rides:list:*");
 
-    return c.json({ success: true });
-  } catch (error) {
-    console.error("Delete ride error:", error);
-    return c.json({ error: "Failed to delete ride" }, 500);
-  }
-});
+      return c.json({ success: true });
+    } catch (error) {
+      console.error("Delete ride error:", error);
+      return c.json({ error: "Failed to delete ride" }, 500);
+    }
+  },
+);
 
 // POST /rides/:id/cancel - Cancel a ride (LEADER/ADMIN only)
-ridesRouter.post("/:id/cancel", authMiddleware, requireRole("LEADER", "ADMIN"), async (c) => {
-  const id = c.req.param("id");
+ridesRouter.post(
+  "/:id/cancel",
+  authMiddleware,
+  requireRole("LEADER", "ADMIN"),
+  async (c) => {
+    const id = c.req.param("id");
 
-  // Check ride exists
-  const existing = await db.query.rides.findFirst({
-    where: and(eq(rides.id, id), eq(rides.deleted, false)),
-  });
+    // Check ride exists
+    const existing = await db.query.rides.findFirst({
+      where: and(eq(rides.id, id), eq(rides.deleted, false)),
+    });
 
-  if (!existing) {
-    return c.json({ error: "Ride not found" }, 404);
-  }
+    if (!existing) {
+      return c.json({ error: "Ride not found" }, 404);
+    }
 
-  try {
-    await db
-      .update(rides)
-      .set({ cancelled: true, updatedAt: new Date().toISOString() })
-      .where(eq(rides.id, id));
+    try {
+      await db
+        .update(rides)
+        .set({ cancelled: true, updatedAt: new Date().toISOString() })
+        .where(eq(rides.id, id));
 
-    // Invalidate caches
-    void cacheInvalidate(buildCacheKey("detail", { rideId: id }));
-    void cacheInvalidatePattern("rides:list:*");
+      // Invalidate caches
+      void cacheInvalidate(buildCacheKey("detail", { rideId: id }));
+      void cacheInvalidatePattern("rides:list:*");
 
-    return c.json({ success: true });
-  } catch (error) {
-    console.error("Cancel ride error:", error);
-    return c.json({ error: "Failed to cancel ride" }, 500);
-  }
-});
+      return c.json({ success: true });
+    } catch (error) {
+      console.error("Cancel ride error:", error);
+      return c.json({ error: "Failed to cancel ride" }, 500);
+    }
+  },
+);
 
 // POST /rides/:id/uncancel - Uncancel a ride (LEADER/ADMIN only)
-ridesRouter.post("/:id/uncancel", authMiddleware, requireRole("LEADER", "ADMIN"), async (c) => {
-  const id = c.req.param("id");
+ridesRouter.post(
+  "/:id/uncancel",
+  authMiddleware,
+  requireRole("LEADER", "ADMIN"),
+  async (c) => {
+    const id = c.req.param("id");
 
-  // Check ride exists
-  const existing = await db.query.rides.findFirst({
-    where: and(eq(rides.id, id), eq(rides.deleted, false)),
-  });
+    // Check ride exists
+    const existing = await db.query.rides.findFirst({
+      where: and(eq(rides.id, id), eq(rides.deleted, false)),
+    });
 
-  if (!existing) {
-    return c.json({ error: "Ride not found" }, 404);
-  }
+    if (!existing) {
+      return c.json({ error: "Ride not found" }, 404);
+    }
 
-  try {
-    await db
-      .update(rides)
-      .set({ cancelled: false, updatedAt: new Date().toISOString() })
-      .where(eq(rides.id, id));
+    try {
+      await db
+        .update(rides)
+        .set({ cancelled: false, updatedAt: new Date().toISOString() })
+        .where(eq(rides.id, id));
 
-    // Invalidate caches
-    void cacheInvalidate(buildCacheKey("detail", { rideId: id }));
-    void cacheInvalidatePattern("rides:list:*");
+      // Invalidate caches
+      void cacheInvalidate(buildCacheKey("detail", { rideId: id }));
+      void cacheInvalidatePattern("rides:list:*");
 
-    return c.json({ success: true });
-  } catch (error) {
-    console.error("Uncancel ride error:", error);
-    return c.json({ error: "Failed to uncancel ride" }, 500);
-  }
-});
+      return c.json({ success: true });
+    } catch (error) {
+      console.error("Uncancel ride error:", error);
+      return c.json({ error: "Failed to uncancel ride" }, 500);
+    }
+  },
+);

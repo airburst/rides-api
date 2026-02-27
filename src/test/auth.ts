@@ -1,6 +1,6 @@
 /**
  * Test Authentication Utilities
- * 
+ *
  * Provides dummy auth tokens and mock functions for testing
  * protected routes without needing real JWT tokens.
  */
@@ -53,7 +53,7 @@ export const TEST_USERS = {
 /**
  * Mocked verifyAuth0Token function
  * Maps test tokens to user data without real JWT verification
- * 
+ *
  * @param token - Test token string
  * @returns User data with role
  * @throws Error for invalid/expired tokens
@@ -77,7 +77,7 @@ export const mockVerifyAuth0Token = mock((token: string) => {
 
 /**
  * Helper to create Authorization header for requests
- * 
+ *
  * @param role - User role (USER, LEADER, ADMIN)
  * @returns Headers object with Bearer token
  */
@@ -89,11 +89,13 @@ export function createAuthHeader(role: "USER" | "LEADER" | "ADMIN") {
 
 /**
  * Helper to create invalid Authorization header
- * 
+ *
  * @param type - Type of invalid token
  * @returns Headers object with invalid token
  */
-export function createInvalidAuthHeader(type: "INVALID" | "EXPIRED" | "MISSING" = "INVALID") {
+export function createInvalidAuthHeader(
+  type: "INVALID" | "EXPIRED" | "MISSING" = "INVALID",
+) {
   if (type === "MISSING") {
     return {};
   }
@@ -104,7 +106,7 @@ export function createInvalidAuthHeader(type: "INVALID" | "EXPIRED" | "MISSING" 
 
 /**
  * Get test user by role
- * 
+ *
  * @param role - User role
  * @returns Test user object
  */

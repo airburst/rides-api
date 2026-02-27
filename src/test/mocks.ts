@@ -1,6 +1,6 @@
 /**
  * Mock Database and External Dependencies
- * 
+ *
  * Provides mock implementations of database queries
  * and external services for testing.
  */

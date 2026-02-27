@@ -1,0 +1,2 @@
+ALTER TABLE "bcc_archived_rides" ALTER COLUMN "ride_date" SET DATA TYPE timestamp(3) with time zone;--> statement-breakpoint
+ALTER TABLE "bcc_rides" ALTER COLUMN "ride_date" SET DATA TYPE timestamp(3) with time zone;

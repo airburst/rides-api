@@ -5,10 +5,10 @@ import { accounts, repeatingRides, rides } from "../db/schema/index.js";
 import { verifyAuth0Token } from "../lib/auth0.js";
 import { cacheInvalidatePattern } from "../lib/cache.js";
 import {
-	makeRidesInPeriod,
-	updateRRuleStartDate,
-	type RepeatingRideDb,
-	type RideSet,
+  makeRidesInPeriod,
+  updateRRuleStartDate,
+  type RepeatingRideDb,
+  type RideSet,
 } from "../lib/rrule-utils.js";
 
 export const generateRouter = new Hono();

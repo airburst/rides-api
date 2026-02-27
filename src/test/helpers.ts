@@ -1,6 +1,6 @@
 /**
  * Test Helper Utilities
- * 
+ *
  * Common helper functions for testing
  */
 
@@ -12,7 +12,7 @@ import { expect } from "bun:test";
 export function assertResponse(
   response: { status: number; data?: unknown },
   expectedStatus: number,
-  expectedBody?: unknown
+  expectedBody?: unknown,
 ) {
   expect(response.status).toBe(expectedStatus);
   if (expectedBody !== undefined) {
@@ -26,7 +26,7 @@ export function assertResponse(
 export function assertErrorResponse(
   response: { status: number; data?: { error?: string; message?: string } },
   expectedStatus: number,
-  expectedMessage?: string
+  expectedMessage?: string,
 ) {
   expect(response.status).toBe(expectedStatus);
   if (expectedMessage) {
@@ -72,7 +72,7 @@ export function sleep(ms: number): Promise<void> {
 export function assertArrayContains<T>(
   array: T[],
   predicate: (item: T) => boolean,
-  message?: string
+  message?: string,
 ) {
   const found = array.some(predicate);
   if (!found) {
@@ -86,7 +86,7 @@ export function assertArrayContains<T>(
 export function assertArrayNotContains<T>(
   array: T[],
   predicate: (item: T) => boolean,
-  message?: string
+  message?: string,
 ) {
   const found = array.some(predicate);
   if (found) {

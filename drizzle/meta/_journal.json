@@ -64,6 +64,13 @@
       "when": 1772150400000,
       "tag": "0008_fix_repeating_ride_dtstart",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1772196550318,
+      "tag": "0009_faulty_havok",
+      "breakpoints": true
     }
   ]
 }

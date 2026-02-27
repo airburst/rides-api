@@ -9,7 +9,7 @@ const createTable = pgTableCreator((name) => `bcc_${name}`);
 export const roleEnum = t.pgEnum("role", ["USER", "LEADER", "ADMIN"]);
 
 // Type exports
-export type Role = typeof roleEnum.enumValues[number];
+export type Role = (typeof roleEnum.enumValues)[number];
 
 // ============ TABLES ============
 
@@ -74,7 +74,9 @@ export const rides = createTable(
     id: t.text().primaryKey(),
     name: t.varchar({ length: 255 }).notNull(),
     rideGroup: t.varchar({ length: 255 }),
-    rideDate: t.timestamp({ precision: 3, mode: "string" }).notNull(),
+    rideDate: t
+      .timestamp({ precision: 3, withTimezone: true, mode: "string" })
+      .notNull(),
     destination: t.varchar({ length: 255 }),
     distance: t.integer(),
     meetPoint: t.varchar({ length: 255 }),
@@ -185,7 +187,9 @@ export const archivedRides = createTable(
     id: t.text().primaryKey(),
     name: t.varchar({ length: 255 }).notNull(),
     rideGroup: t.varchar({ length: 255 }),
-    rideDate: t.timestamp({ precision: 3, mode: "string" }).notNull(),
+    rideDate: t
+      .timestamp({ precision: 3, withTimezone: true, mode: "string" })
+      .notNull(),
     destination: t.varchar({ length: 255 }),
     distance: t.integer(),
     meetPoint: t.varchar({ length: 255 }),

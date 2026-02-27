@@ -1,6 +1,6 @@
 {
-  "id": "3bc5b20d-4c9b-41f2-aa49-f15f70c397ba",
-  "prevId": "5298053b-c685-4a65-a2e2-c03f06541e0c",
+  "id": "5eaf452d-65bb-48cc-85c5-a66c23928801",
+  "prevId": "bcb17b67-d9bb-4f54-9039-d8a9b0b468af",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -90,6 +90,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "idx_accounts_provider_account_id": {
+          "name": "idx_accounts_provider_account_id",
+          "columns": [
+            {
+              "expression": "provider_account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -138,7 +153,7 @@
         },
         "ride_date": {
           "name": "ride_date",
-          "type": "timestamp(3)",
+          "type": "timestamp(3) with time zone",
           "primaryKey": false,
           "notNull": true
         },
@@ -494,7 +509,7 @@
         },
         "ride_date": {
           "name": "ride_date",
-          "type": "timestamp(3)",
+          "type": "timestamp(3) with time zone",
           "primaryKey": false,
           "notNull": true
         },
@@ -603,6 +618,27 @@
             },
             {
               "expression": "deleted",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_rides_schedule_date": {
+          "name": "idx_rides_schedule_date",
+          "columns": [
+            {
+              "expression": "schedule_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "ride_date",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

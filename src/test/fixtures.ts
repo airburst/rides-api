@@ -1,6 +1,6 @@
 /**
  * Test Data Fixtures
- * 
+ *
  * Factory functions to create consistent test data
  * for users, rides, repeating rides, etc.
  */
@@ -152,10 +152,12 @@ export function createTestUsers() {
 /**
  * Create a test ride with participants
  */
-export function createTestRideWithParticipants(rideOverrides?: Parameters<typeof createTestRide>[0]) {
+export function createTestRideWithParticipants(
+  rideOverrides?: Parameters<typeof createTestRide>[0],
+) {
   const ride = createTestRide(rideOverrides);
   const users = createTestUsers();
-  
+
   return {
     ride,
     participants: [

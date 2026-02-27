@@ -3,6 +3,7 @@
 ## ✅ Completed Work
 
 ### Bun Migration & CI/CD
+
 - [x] Migrated from npm to Bun (80x faster installs)
 - [x] Updated all scripts to use Bun runtime
 - [x] Created PM2 ecosystem config for production
@@ -12,6 +13,7 @@
 - [x] Zero-downtime deployments via PM2 reload
 
 ### Test Infrastructure
+
 - [x] Created test utilities (`src/test/`)
   - [x] Mock auth tokens and helpers (`auth.ts`)
   - [x] Test data factories (`fixtures.ts`)
@@ -21,6 +23,7 @@
 - [x] Added bun-types for TypeScript support
 
 ### RRule Utility Tests
+
 - [x] Complete test coverage for `src/lib/rrule-utils.ts` (26 tests)
 - [x] Schedule generation tests (weekly, daily, multiple days)
 - [x] Winter time adjustment tests (Oct-Mar)
@@ -28,6 +31,7 @@
 - [x] Edge case handling
 
 ### Authorization Tests (CRITICAL - 100% Coverage)
+
 - [x] HTTP authorization tests for ALL routes (105 tests)
 - [x] **Rides Routes** - Public GET, LEADER/ADMIN for modifications
 - [x] **Repeating Rides** - ADMIN only for all operations
@@ -38,6 +42,7 @@
 - [x] Fixed generate.ts to return 403 for insufficient permissions
 
 ### Documentation
+
 - [x] Created AGENTS.md with AI agent guidelines
 - [x] Pre-commit checklist (`lint && test && check-types`)
 - [x] Testing standards and organization
@@ -45,7 +50,9 @@
 - [x] CI/CD documentation
 
 ### Current Status
+
 **147/147 tests passing (100%)** 🎉
+
 - 16 infrastructure tests
 - 26 RRule utility tests
 - 105 authorization tests
@@ -55,11 +62,13 @@
 ## ⏸️ Deferred (Optional Future Work)
 
 ### Phase 4: Business Logic Tests
+
 **Priority:** Low - Not security-critical, authorization is fully tested
 
 Add tests for route business logic edge cases (~40-60 tests):
 
 #### Rides Route (`src/routes/__tests__/rides.test.ts`)
+
 - [ ] Capacity validation
   - Cannot join full ride (when rideLimit reached)
   - Cannot exceed maxRiders limit
@@ -74,6 +83,7 @@ Add tests for route business logic edge cases (~40-60 tests):
 **Estimated:** 150-200 lines, ~15-20 tests
 
 #### Repeating Rides Route (`src/routes/__tests__/repeating-rides.test.ts`)
+
 - [ ] Cascade deletes
   - Deleting template removes future rides
   - Past rides preserved
@@ -84,6 +94,7 @@ Add tests for route business logic edge cases (~40-60 tests):
 **Estimated:** 120-150 lines, ~10-15 tests
 
 #### Users Route (`src/routes/__tests__/users.test.ts`)
+
 - [ ] Search functionality
   - Case-insensitive name search
   - Partial matching works
@@ -92,6 +103,7 @@ Add tests for route business logic edge cases (~40-60 tests):
 **Estimated:** 80-100 lines, ~8-10 tests
 
 #### Generate Route (`src/routes/__tests__/generate.test.ts`)
+
 - [ ] Bulk ride generation
   - Generates rides for specified month/year
   - Calls makeRidesInPeriod correctly
@@ -108,6 +120,7 @@ Add tests for route business logic edge cases (~40-60 tests):
 ---
 
 ### Phase 5: Integration Test Utilities
+
 **Priority:** Low - Infrastructure for future integration testing
 
 - [ ] Create test database setup/teardown helpers
@@ -123,23 +136,27 @@ Add tests for route business logic edge cases (~40-60 tests):
 ## 🔮 Future Enhancements
 
 ### Testing
+
 - [ ] Add code coverage reporting (Bun has built-in coverage support)
 - [ ] Add performance/benchmark tests for critical paths
 - [ ] Add contract tests for API responses
 
 ### CI/CD
+
 - [ ] Add staging environment deployment
 - [ ] Add smoke tests after deployment
 - [ ] Add rollback automation on health check failure
 - [ ] Add GitHub PR status checks
 
 ### Development Experience
+
 - [ ] Add pre-commit git hooks (husky) for lint/test
 - [ ] Add conventional commits enforcement
 - [ ] Add automated changelog generation
 - [ ] Add API documentation generation (OpenAPI/Swagger)
 
 ### Monitoring
+
 - [ ] Add structured logging
 - [ ] Add error tracking (Sentry, Bugsnag, etc.)
 - [ ] Add performance monitoring (APM)
@@ -154,6 +171,7 @@ Add tests for route business logic edge cases (~40-60 tests):
 The critical security layer (authorization) is fully tested with 105 tests covering every endpoint and role combination. Business logic tests would catch edge cases and regression bugs, but won't uncover security vulnerabilities.
 
 **Recommendation:** Add business logic tests when:
+
 - You encounter bugs in production that could have been caught
 - You're adding complex new features
 - You want to enforce strict TDD workflow
@@ -184,25 +202,27 @@ src/
 ### Pre-Commit Workflow
 
 Always run before committing (see AGENTS.md):
+
 ```bash
 bun run lint && bun test && bun run check-types
 ```
 
 ### Authorization Matrix (Quick Reference)
 
-| Route | GET | POST | PUT | DELETE | Notes |
-|-------|-----|------|-----|--------|-------|
-| **Rides** | Public | LEADER+ | LEADER+ | LEADER+ | Public read, auth write |
-| **Repeating Rides** | ADMIN | ADMIN | ADMIN | ADMIN | Admin-only |
-| **Users** | ADMIN* | - | Self/ADMIN | - | *except /me (any auth) |
-| **Generate** | - | API Key/ADMIN | - | - | Dual auth |
-| **Archive** | - | API Key ONLY | - | - | API key only |
+| Route               | GET     | POST          | PUT        | DELETE  | Notes                   |
+| ------------------- | ------- | ------------- | ---------- | ------- | ----------------------- |
+| **Rides**           | Public  | LEADER+       | LEADER+    | LEADER+ | Public read, auth write |
+| **Repeating Rides** | ADMIN   | ADMIN         | ADMIN      | ADMIN   | Admin-only              |
+| **Users**           | ADMIN\* | -             | Self/ADMIN | -       | \*except /me (any auth) |
+| **Generate**        | -       | API Key/ADMIN | -          | -       | Dual auth               |
+| **Archive**         | -       | API Key ONLY  | -          | -       | API key only            |
 
 ---
 
 ## 🎯 Current Priority
 
 **Ship it!** All critical work is complete. The API is production-ready with:
+
 - ✅ 100% authorization coverage
 - ✅ Automated CI/CD
 - ✅ Zero-downtime deployments
