@@ -36,11 +36,11 @@ interface RideSet {
   rides: TemplateRide[];
 }
 
-// Check if date is in winter (Oct-Mar)
-const isWinter = (dateString: string): boolean => {
+// Check if date is in winter (Nov-Feb)
+export const isWinter = (dateString: string): boolean => {
   const date = new Date(dateString);
   const month = date.getMonth();
-  return month >= 9 || month <= 2; // Oct=9, Nov=10, Dec=11, Jan=0, Feb=1, Mar=2
+  return month >= 10 || month < 2; // Nov=10, Dec=11, Jan=0, Feb=1
 };
 
 // Change time for winter rides
@@ -156,9 +156,7 @@ export const updateRRuleStartDate = (
     until,
   } = rrule.options;
 
-  // Add one day to start date
   const dtstart = new Date(startDate.valueOf());
-  dtstart.setDate(dtstart.getDate() + 1);
 
   const updatedSchedule = new RRule({
     freq,
