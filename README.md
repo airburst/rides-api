@@ -124,6 +124,7 @@ The API will be available at `http://localhost:3001`
 ## Available Scripts
 
 ### Development
+
 - `bun run dev` - Start development server with hot reload
 - `bun run startdb` - Start local PostgreSQL container
 - `bun run startredis` - Start local Redis container (optional)
@@ -133,6 +134,7 @@ The API will be available at `http://localhost:3001`
 - `bun run check-types` - TypeScript type checking
 
 ### Database
+
 - `bun run db:generate` - Generate Drizzle migrations
 - `bun run db:migrate` - Run database migrations
 - `bun run db:studio` - Open Drizzle Studio
@@ -214,6 +216,7 @@ pm2 reload ecosystem.config.cjs
 ### Cache Performance
 
 With Redis caching enabled:
+
 - **GET /rides**: ~90% faster (100-500ms → 5-10ms cached)
 - **GET /rides/:id**: ~95% faster (50-200ms → 2-5ms cached)
 - Target cache hit rate: >80%

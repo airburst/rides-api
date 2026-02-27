@@ -97,7 +97,9 @@ const generateRide = (
   };
 
   return Object.fromEntries(
-    Object.entries(ride).filter(([, val]) => val !== undefined && val !== null && val !== ""),
+    Object.entries(ride).filter(
+      ([, val]) => val !== undefined && val !== null && val !== "",
+    ),
   ) as unknown as TemplateRide;
 };
 
@@ -146,15 +148,8 @@ export const updateRRuleStartDate = (
   }
 
   const rrule = RRule.fromString(schedule);
-  const {
-    freq,
-    interval,
-    byweekday,
-    bysetpos,
-    bymonth,
-    bymonthday,
-    until,
-  } = rrule.options;
+  const { freq, interval, byweekday, bysetpos, bymonth, bymonthday, until } =
+    rrule.options;
 
   const dtstart = new Date(startDate.valueOf());
 
@@ -172,4 +167,4 @@ export const updateRRuleStartDate = (
   return updatedSchedule.toString();
 };
 
-export type { RepeatingRideDb, TemplateRide, RideSet };
+export type { RepeatingRideDb, RideSet, TemplateRide };

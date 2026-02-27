@@ -97,12 +97,8 @@
           "name": "bcc_accounts_user_id_bcc_users_id_fk",
           "tableFrom": "bcc_accounts",
           "tableTo": "bcc_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -110,10 +106,7 @@
       "compositePrimaryKeys": {
         "bcc_accounts_provider_provider_account_id_pk": {
           "name": "bcc_accounts_provider_provider_account_id_pk",
-          "columns": [
-            "provider",
-            "provider_account_id"
-          ]
+          "columns": ["provider", "provider_account_id"]
         }
       },
       "uniqueConstraints": {},
@@ -274,12 +267,8 @@
           "name": "bcc_archived_users_on_rides_user_id_bcc_users_id_fk",
           "tableFrom": "bcc_archived_users_on_rides",
           "tableTo": "bcc_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -287,12 +276,8 @@
           "name": "bcc_archived_users_on_rides_ride_id_bcc_archived_rides_id_fk",
           "tableFrom": "bcc_archived_users_on_rides",
           "tableTo": "bcc_archived_rides",
-          "columnsFrom": [
-            "ride_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["ride_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -300,10 +285,7 @@
       "compositePrimaryKeys": {
         "bcc_archived_users_on_rides_user_id_ride_id_pk": {
           "name": "bcc_archived_users_on_rides_user_id_ride_id_pk",
-          "columns": [
-            "user_id",
-            "ride_id"
-          ]
+          "columns": ["user_id", "ride_id"]
         }
       },
       "uniqueConstraints": {},
@@ -724,12 +706,8 @@
           "name": "bcc_sessions_user_id_bcc_users_id_fk",
           "tableFrom": "bcc_sessions",
           "tableTo": "bcc_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -798,12 +776,8 @@
           "name": "bcc_users_on_rides_user_id_bcc_users_id_fk",
           "tableFrom": "bcc_users_on_rides",
           "tableTo": "bcc_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -811,12 +785,8 @@
           "name": "bcc_users_on_rides_ride_id_bcc_rides_id_fk",
           "tableFrom": "bcc_users_on_rides",
           "tableTo": "bcc_rides",
-          "columnsFrom": [
-            "ride_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["ride_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -824,10 +794,7 @@
       "compositePrimaryKeys": {
         "bcc_users_on_rides_user_id_ride_id_pk": {
           "name": "bcc_users_on_rides_user_id_ride_id_pk",
-          "columns": [
-            "user_id",
-            "ride_id"
-          ]
+          "columns": ["user_id", "ride_id"]
         }
       },
       "uniqueConstraints": {},
@@ -1008,10 +975,7 @@
       "compositePrimaryKeys": {
         "bcc_verification_tokens_identifier_token_pk": {
           "name": "bcc_verification_tokens_identifier_token_pk",
-          "columns": [
-            "identifier",
-            "token"
-          ]
+          "columns": ["identifier", "token"]
         }
       },
       "uniqueConstraints": {},
@@ -1024,11 +988,7 @@
     "public.role": {
       "name": "role",
       "schema": "public",
-      "values": [
-        "USER",
-        "LEADER",
-        "ADMIN"
-      ]
+      "values": ["USER", "LEADER", "ADMIN"]
     }
   },
   "schemas": {},

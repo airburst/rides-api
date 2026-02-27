@@ -443,10 +443,7 @@ describe("RRule Utilities", () => {
     test("updateRRuleStartDate preserves time component", () => {
       const schedule = "FREQ=WEEKLY;BYDAY=SA;DTSTART=20260101T083000";
 
-      const result = updateRRuleStartDate(
-        schedule,
-        "2026-03-03T08:30:00.000Z",
-      );
+      const result = updateRRuleStartDate(schedule, "2026-03-03T08:30:00.000Z");
 
       expect(result).toContain("DTSTART:20260303T083000Z");
     });
