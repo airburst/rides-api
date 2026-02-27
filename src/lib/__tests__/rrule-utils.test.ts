@@ -7,7 +7,11 @@
 
 import { describe, expect, test } from "bun:test";
 import type { RepeatingRideDb } from "../rrule-utils";
-import { makeRidesInPeriod, updateRRuleStartDate } from "../rrule-utils";
+import {
+  isWinter,
+  makeRidesInPeriod,
+  updateRRuleStartDate,
+} from "../rrule-utils";
 
 /**
  * Helper to create a test template
@@ -128,7 +132,7 @@ describe("RRule Utilities", () => {
   });
 
   describe("Winter Time Adjustments", () => {
-    test("applies winter time in October", () => {
+    test("does NOT apply winter time in October", () => {
       const template = createTemplate({
         schedule: "FREQ=WEEKLY;BYDAY=SA;DTSTART=20261001T090000",
         winterStartTime: "08:30",
@@ -140,8 +144,8 @@ describe("RRule Utilities", () => {
       expect(firstRide).toBeDefined();
       if (firstRide) {
         const rideDate = new Date(firstRide.rideDate);
-        expect(rideDate.getUTCHours()).toBe(8);
-        expect(rideDate.getUTCMinutes()).toBe(30);
+        expect(rideDate.getUTCHours()).toBe(9);
+        expect(rideDate.getUTCMinutes()).toBe(0);
       }
     });
 
@@ -212,7 +216,7 @@ describe("RRule Utilities", () => {
       }
     });
 
-    test("applies winter time in March", () => {
+    test("does NOT apply winter time in March", () => {
       const template = createTemplate({
         schedule: "FREQ=WEEKLY;BYDAY=SA;DTSTART=20260301T090000",
         winterStartTime: "08:30",
@@ -224,8 +228,8 @@ describe("RRule Utilities", () => {
       expect(firstRide).toBeDefined();
       if (firstRide) {
         const rideDate = new Date(firstRide.rideDate);
-        expect(rideDate.getUTCHours()).toBe(8);
-        expect(rideDate.getUTCMinutes()).toBe(30);
+        expect(rideDate.getUTCHours()).toBe(9);
+        expect(rideDate.getUTCMinutes()).toBe(0);
       }
     });
 
@@ -337,14 +341,13 @@ describe("RRule Utilities", () => {
       expect(result).toBe(schedule);
     });
 
-    test("adds one day to start date", () => {
+    test("uses exact start date without offset", () => {
       const schedule = "FREQ=WEEKLY;BYDAY=SA;DTSTART=20260301T090000";
       const startDate = new Date("2026-03-15T00:00:00.000Z");
 
       const result = updateRRuleStartDate(schedule, startDate.toISOString());
 
-      // Should be March 16 (15 + 1 day)
-      expect(result).toContain("DTSTART:20260316");
+      expect(result).toContain("DTSTART:20260315");
     });
   });
 
@@ -392,6 +395,60 @@ describe("RRule Utilities", () => {
 
       // Only 1 ride in March (first Saturday)
       expect(result.rides.length).toBe(1);
+    });
+  });
+
+  describe("isWinter", () => {
+    test("returns false for October", () => {
+      expect(isWinter("2023-10-15T10:00:00.000Z")).toBe(false);
+    });
+
+    test("returns true for November", () => {
+      expect(isWinter("2023-11-15T10:00:00.000Z")).toBe(true);
+    });
+
+    test("returns true for December", () => {
+      expect(isWinter("2023-12-15T10:00:00.000Z")).toBe(true);
+    });
+
+    test("returns true for January", () => {
+      expect(isWinter("2023-01-15T10:00:00.000Z")).toBe(true);
+    });
+
+    test("returns true for February", () => {
+      expect(isWinter("2023-02-15T10:00:00.000Z")).toBe(true);
+    });
+
+    test("returns false for March", () => {
+      expect(isWinter("2023-03-15T10:00:00.000Z")).toBe(false);
+    });
+
+    test("returns false for July", () => {
+      expect(isWinter("2023-07-15T10:00:00.000Z")).toBe(false);
+    });
+  });
+
+  describe("Idempotency and round-trip", () => {
+    test("makeRidesInPeriod is idempotent", () => {
+      const template = createTemplate({
+        schedule: "FREQ=WEEKLY;BYDAY=SA;DTSTART=20260503T080000",
+      });
+
+      const first = makeRidesInPeriod(template, "2026-05-03T00:00:00.000Z");
+      const second = makeRidesInPeriod(template, "2026-05-03T00:00:00.000Z");
+
+      expect(second.rides).toEqual(first.rides);
+    });
+
+    test("updateRRuleStartDate preserves time component", () => {
+      const schedule = "FREQ=WEEKLY;BYDAY=SA;DTSTART=20260101T083000";
+
+      const result = updateRRuleStartDate(
+        schedule,
+        "2026-03-03T08:30:00.000Z",
+      );
+
+      expect(result).toContain("DTSTART:20260303T083000Z");
     });
   });
 });
