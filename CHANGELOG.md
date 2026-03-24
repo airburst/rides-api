@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.6.1
+
+### Patch Changes
+
+- Empty a user name on creation, and add tests
+
 ## 1.6.0
 
 ### Minor Changes

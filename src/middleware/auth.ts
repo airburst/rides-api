@@ -35,7 +35,7 @@ async function findOrProvisionUser(
     await tx.insert(users).values({
       id: userId,
       email: userInfo.email ?? `${payload.sub}@placeholder.local`,
-      name: userInfo.name ?? null,
+      name: userInfo.name === userInfo.email ? null : (userInfo.name ?? null),
       image: userInfo.picture ?? null,
     });
 
