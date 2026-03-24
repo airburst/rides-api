@@ -1,8 +1,12 @@
 import { eq } from "drizzle-orm";
 import { createMiddleware } from "hono/factory";
 import { db } from "../db/index.js";
-import { accounts } from "../db/schema/index.js";
-import { verifyAuth0Token } from "../lib/auth0.js";
+import { accounts, users } from "../db/schema/index.js";
+import {
+  fetchAuth0UserInfo,
+  verifyAuth0Token,
+  type Auth0TokenPayload,
+} from "../lib/auth0.js";
 
 export interface AuthUser {
   id: string;
@@ -10,6 +14,44 @@ export interface AuthUser {
   role: string;
   name: string | null;
   email: string | null;
+}
+
+async function findOrProvisionUser(
+  payload: Auth0TokenPayload,
+  accessToken: string,
+) {
+  const existing = await db.query.accounts.findFirst({
+    where: eq(accounts.providerAccountId, payload.sub),
+    with: { users: true },
+  });
+
+  if (existing?.users) return existing.users;
+
+  // JIT provisioning: fetch profile from Auth0 and create user + account
+  const userInfo = await fetchAuth0UserInfo(accessToken);
+  const userId = crypto.randomUUID();
+
+  await db.transaction(async (tx) => {
+    await tx.insert(users).values({
+      id: userId,
+      email: userInfo.email ?? `${payload.sub}@placeholder.local`,
+      name: userInfo.name ?? null,
+      image: userInfo.picture ?? null,
+    });
+
+    await tx.insert(accounts).values({
+      userId,
+      type: "oauth",
+      provider: "auth0",
+      providerAccountId: payload.sub,
+    });
+  });
+
+  console.info(`Provisioned new user ${userId} for Auth0 sub ${payload.sub}`);
+
+  return db.query.users.findFirst({
+    where: eq(users.id, userId),
+  });
 }
 
 // Required auth - returns 401 if not authenticated
@@ -24,23 +66,18 @@ export const authMiddleware = createMiddleware<{
   const token = authHeader.slice(7);
   try {
     const payload = await verifyAuth0Token(token);
+    const user = await findOrProvisionUser(payload, token);
 
-    // Look up user by Auth0 ID in accounts table
-    const account = await db.query.accounts.findFirst({
-      where: eq(accounts.providerAccountId, payload.sub),
-      with: { users: true },
-    });
-
-    if (!account?.users) {
-      return c.json({ error: "User not found" }, 401);
+    if (!user) {
+      return c.json({ error: "User provisioning failed" }, 500);
     }
 
     c.set("user", {
-      id: account.users.id,
+      id: user.id,
       auth0Id: payload.sub,
-      role: account.users.role ?? "USER",
-      name: account.users.name,
-      email: account.users.email,
+      role: user.role ?? "USER",
+      name: user.name,
+      email: user.email,
     });
 
     await next();
@@ -59,19 +96,15 @@ export const optionalAuth = createMiddleware<{
     try {
       const token = authHeader.slice(7);
       const payload = await verifyAuth0Token(token);
+      const user = await findOrProvisionUser(payload, token);
 
-      const account = await db.query.accounts.findFirst({
-        where: eq(accounts.providerAccountId, payload.sub),
-        with: { users: true },
-      });
-
-      if (account?.users) {
+      if (user) {
         c.set("user", {
-          id: account.users.id,
+          id: user.id,
           auth0Id: payload.sub,
-          role: account.users.role ?? "USER",
-          name: account.users.name,
-          email: account.users.email,
+          role: user.role ?? "USER",
+          name: user.name,
+          email: user.email,
         });
       }
     } catch {

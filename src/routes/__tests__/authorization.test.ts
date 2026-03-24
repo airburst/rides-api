@@ -113,6 +113,9 @@ const mockVerifyAuth0Token = mock((token: string) => {
 
 mock.module("../../lib/auth0.js", () => ({
   verifyAuth0Token: mockVerifyAuth0Token,
+  fetchAuth0UserInfo: mock(() =>
+    Promise.resolve({ sub: "test", email: "test@test.com" }),
+  ),
 }));
 
 // NOW import routes (after mocks are in place)

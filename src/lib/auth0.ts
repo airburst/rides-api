@@ -40,3 +40,24 @@ export async function verifyAuth0Token(
 
   return payload as Auth0TokenPayload;
 }
+
+export interface Auth0UserInfo {
+  sub: string;
+  email?: string;
+  name?: string;
+  picture?: string;
+}
+
+export async function fetchAuth0UserInfo(
+  accessToken: string,
+): Promise<Auth0UserInfo> {
+  const res = await fetch(`https://${AUTH0_DOMAIN}/userinfo`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Auth0 /userinfo failed: ${res.status}`);
+  }
+
+  return res.json() as Promise<Auth0UserInfo>;
+}

@@ -21,7 +21,8 @@ Pre-commit hook (husky): `bun run lint && bun run check-types && bun test`
 ## Commits and PRs
 
 - **Before committing**: run `bun run lint && bun run check-types && bun test` (enforced by husky pre-commit hook).
-- **Before creating a PR**: bump the version in `package.json` using appropriate semver (patch for fixes, minor for features, major for breaking changes) and add a corresponding entry to `CHANGELOG.md` following the existing Keep a Changelog format.
+- **Before creating a PR**: add a changeset via `bun run changeset` (patch for fixes, minor for features, major for breaking changes).
+- **Versioning**: `bun run version` consumes changesets, bumps `package.json` version, and updates `CHANGELOG.md`.
 
 ## Architecture
 
@@ -38,7 +39,7 @@ Request → CORS → Logger → Auth middleware → Route handler → DB query �
 
 ### Auth: two patterns
 
-- **JWT auth** (`authMiddleware` / `optionalAuth`): verifies Auth0 JWT via JWKS, then looks up `accounts.providerAccountId` (Auth0 `sub`) joined to `users`. Both valid JWT AND a matching DB account row required — new Auth0 users without an account row get 401.
+- **JWT auth** (`authMiddleware` / `optionalAuth`): verifies Auth0 JWT via JWKS, then looks up `accounts.providerAccountId` (Auth0 `sub`) joined to `users`. If no account row exists, JIT provisions a new `bcc_users` + `bcc_accounts` row using Auth0 `/userinfo`.
 - **API key auth** (`archive`, `riderhq`): static Bearer token check against `API_KEY` env var. `generate` accepts either API key OR ADMIN JWT.
 
 ### Database conventions

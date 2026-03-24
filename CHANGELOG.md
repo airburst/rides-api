@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.6.0
+
+### Minor Changes
+
+- JIT user provisioning: auto-create bcc_users + bcc_accounts on first login for new Auth0 users via /userinfo endpoint. Add changesets for versioning workflow.
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
