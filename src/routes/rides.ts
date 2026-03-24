@@ -244,7 +244,7 @@ ridesRouter.patch("/:id/notes", authMiddleware, async (c) => {
   const rideId = c.req.param("id");
   const user = c.get("user");
 
-  let body: { notes?: string; userId?: string } = {};
+  let body: { notes?: string; userId?: string };
   try {
     body = await c.req.json();
   } catch {

@@ -4,7 +4,7 @@ import "dotenv/config";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-import pkg from "../package.json" assert { type: "json" };
+import pkg from "../package.json" with { type: "json" };
 import { sqlClient } from "./db/index.js";
 import { closeRedisConnection, getRedisClient } from "./lib/cache.js";
 import { archiveRouter } from "./routes/archive.js";
