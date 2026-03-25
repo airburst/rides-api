@@ -1,0 +1,24 @@
+meta {
+  name: Get Route
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/routes/:id
+  body: none
+  auth: none
+}
+
+params:path {
+  id: test-route-id
+}
+
+docs {
+  # Get Route
+
+  Returns a single route including the raw GPX string.
+
+  ## Authentication
+  None required.
+}

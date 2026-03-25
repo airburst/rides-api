@@ -1,0 +1,20 @@
+meta {
+  name: List Routes
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/routes
+  body: none
+  auth: none
+}
+
+docs {
+  # List Routes
+
+  Returns all routes (GPX field excluded for brevity).
+
+  ## Authentication
+  None required.
+}

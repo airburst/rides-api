@@ -1,0 +1,51 @@
+meta {
+  name: Get Token
+  type: http
+  seq: 1
+}
+
+post {
+  url: https://{{auth0Domain}}/oauth/token
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "grant_type": "password",
+    "username": "{{testEmail}}",
+    "password": "{{testPassword}}",
+    "client_id": "{{auth0ClientId}}",
+    "audience": "{{auth0Audience}}",
+    "connection": "{{auth0Connection}}"
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setEnvVar("accessToken", res.body.access_token);
+    console.log("Token saved to accessToken env var");
+  } else {
+    console.error("Failed to get token:", res.body);
+  }
+}
+
+docs {
+  # Get Auth0 Token
+  
+  Fetches a JWT via the Resource Owner Password Credentials (ROPC) grant.
+  On success the `access_token` is automatically saved to the `accessToken`
+  environment variable, so all subsequent authenticated requests use it.
+  
+  ## Requirements in Auth0
+  - Application must have the **Password** grant type enabled
+  - Connection: usually `Username-Password-Authentication`
+  
+  ## Required env vars
+  - `auth0Domain` — e.g. `your-tenant.auth0.com`
+  - `auth0ClientId` — the Application's Client ID
+  - `auth0Audience` — API Identifier (e.g. `https://api.your-app.com`)
+  - `auth0Connection` — identity provider connection name
+  - `testEmail` (secret) — test account email
+  - `testPassword` (secret) — test account password
+}

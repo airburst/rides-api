@@ -12,6 +12,7 @@ import { generateRouter } from "./routes/generate.js";
 import { repeatingRidesRouter } from "./routes/repeating-rides.js";
 import { riderhqRouter } from "./routes/riderhq.js";
 import { ridesRouter } from "./routes/rides.js";
+import { routesRouter } from "./routes/routemaps.js";
 import { usersRouter } from "./routes/users.js";
 
 const app = new Hono();
@@ -38,9 +39,11 @@ app.use(
 
 // Static file serving
 app.use("/avatars/*", serveStatic({ root: "./public" }));
+app.use("/maps/*", serveStatic({ root: "./public" }));
 
 // Routes
 app.route("/rides", ridesRouter);
+app.route("/routes", routesRouter);
 app.route("/users", usersRouter);
 app.route("/repeating-rides", repeatingRidesRouter);
 app.route("/generate", generateRouter);

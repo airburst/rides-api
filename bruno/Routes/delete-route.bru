@@ -1,0 +1,29 @@
+meta {
+  name: Delete Route
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/routes/:id
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+params:path {
+  id: test-route-id
+}
+
+docs {
+  # Delete Route
+
+  Deletes a route from the database.
+  Note: the generated map image file is not removed from disk (v1 behaviour).
+
+  ## Authentication
+  Required - Bearer token with LEADER or ADMIN role.
+}

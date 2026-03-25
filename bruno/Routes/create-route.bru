@@ -1,0 +1,36 @@
+meta {
+  name: Create Route
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/routes
+  body: multipart-form
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:multipart-form {
+  name: Plain Sailing
+  ~gpx: /Users/mark/Downloads/PlainSailing.gpx
+  externalUrl:
+}
+
+docs {
+  # Create Route
+
+  Upload a GPX file to create a route with an auto-generated static map image.
+  Distance is computed automatically from the GPX track points.
+
+  ## Authentication
+  Required - Bearer token with LEADER or ADMIN role.
+
+  ## Form Fields
+  - `name` (required): Route name
+  - `gpx` (required): GPX file upload
+  - `externalUrl` (optional): Link to Strava/RideWithGPS page
+}

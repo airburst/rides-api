@@ -62,6 +62,10 @@ const mockDbQuery = {
     findFirst: mock(() => Promise.resolve(null as any)),
     findMany: mock(() => Promise.resolve([] as any[])),
   },
+  routes: {
+    findFirst: mock(() => Promise.resolve(null as any)),
+    findMany: mock(() => Promise.resolve([] as any[])),
+  },
 };
 
 const mockDb = {
@@ -90,6 +94,22 @@ const mockDb = {
 };
 
 mock.module("../../db/index.js", () => ({ db: mockDb }));
+
+// Mock staticmaps and fs/promises BEFORE importing routes (routes.ts uses these)
+mock.module("staticmaps", () => ({
+  default: class {
+    addLine(_: unknown) {}
+    addMarker(_: unknown) {}
+    async render() {}
+    image = { buffer: async (_mime: string) => Buffer.alloc(0) };
+  },
+}));
+
+mock.module("node:fs/promises", () => ({
+  mkdir: async (_path: string, _opts?: unknown) => {},
+  writeFile: async (_path: string, _data: unknown) => {},
+  unlink: async (_path: string) => {},
+}));
 
 // Mock verifyAuth0Token BEFORE importing routes
 const mockVerifyAuth0Token = mock((token: string) => {
@@ -124,6 +144,7 @@ const { repeatingRidesRouter } = await import("../repeating-rides.js");
 const { usersRouter } = await import("../users.js");
 const { generateRouter } = await import("../generate.js");
 const { archiveRouter } = await import("../archive.js");
+const { routesRouter } = await import("../routemaps.js");
 
 // Create test app with all routes
 const app = new Hono();
@@ -132,6 +153,7 @@ app.route("/repeating-rides", repeatingRidesRouter);
 app.route("/users", usersRouter);
 app.route("/generate", generateRouter);
 app.route("/archive", archiveRouter);
+app.route("/routes", routesRouter);
 
 beforeEach(() => {
   // Reset mocks
@@ -156,6 +178,19 @@ beforeEach(() => {
   // Mock users query
   mockDbQuery.users.findMany.mockResolvedValue([]);
   mockDbQuery.users.findFirst.mockResolvedValue(TEST_USERS.USER);
+
+  // Mock routes query
+  mockDbQuery.routes.findMany.mockResolvedValue([]);
+  mockDbQuery.routes.findFirst.mockResolvedValue({
+    id: "test-route-id",
+    name: "Test Route",
+    distance: 50,
+    externalUrl: null,
+    mapImageUrl: "/maps/test-route-id.png",
+    gpx: null,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+  });
 });
 
 describe("🔐 Authorization Tests (CRITICAL)", () => {
@@ -1223,6 +1258,194 @@ describe("🔐 Authorization Tests (CRITICAL)", () => {
         }),
       });
       expect(response.status).toBe(401);
+    });
+  });
+
+  describe("Routes Resource - LEADER and ADMIN", () => {
+    const TEST_GPX = `<?xml version="1.0"?><gpx version="1.1"><trk><trkseg><trkpt lat="51.500" lon="-0.100"></trkpt><trkpt lat="51.510" lon="-0.110"></trkpt><trkpt lat="51.520" lon="-0.120"></trkpt></trkseg></trk></gpx>`;
+
+    describe("GET /routes - List routes", () => {
+      test("allows guests (no auth)", async () => {
+        const response = await app.request("/routes");
+        expect(response.status).toBe(200);
+        const data = await response.json();
+        expect(data).toHaveProperty("routes");
+      });
+
+      test("allows USER", async () => {
+        const response = await app.request("/routes", {
+          headers: { Authorization: `Bearer ${TEST_TOKENS.USER}` },
+        });
+        expect(response.status).toBe(200);
+      });
+
+      test("allows LEADER", async () => {
+        const response = await app.request("/routes", {
+          headers: { Authorization: `Bearer ${TEST_TOKENS.LEADER}` },
+        });
+        expect(response.status).toBe(200);
+      });
+
+      test("allows ADMIN", async () => {
+        const response = await app.request("/routes", {
+          headers: { Authorization: `Bearer ${TEST_TOKENS.ADMIN}` },
+        });
+        expect(response.status).toBe(200);
+      });
+    });
+
+    describe("GET /routes/:id - View route", () => {
+      test("allows guests (no auth)", async () => {
+        const response = await app.request("/routes/test-route-id");
+        expect(response.status).toBe(200);
+      });
+
+      test("allows USER", async () => {
+        const response = await app.request("/routes/test-route-id", {
+          headers: { Authorization: `Bearer ${TEST_TOKENS.USER}` },
+        });
+        expect(response.status).toBe(200);
+      });
+
+      test("returns 404 for unknown id", async () => {
+        mockDbQuery.routes.findFirst.mockResolvedValueOnce(null);
+        const response = await app.request("/routes/unknown-id");
+        expect(response.status).toBe(404);
+      });
+    });
+
+    describe("POST /routes - Create route", () => {
+      const makeFormData = () => {
+        const fd = new FormData();
+        fd.append("name", "Test Route");
+        fd.append(
+          "gpx",
+          new File([TEST_GPX], "test.gpx", {
+            type: "application/gpx+xml",
+          }),
+        );
+        return fd;
+      };
+
+      test("rejects guests (401)", async () => {
+        const response = await app.request("/routes", {
+          method: "POST",
+          body: makeFormData(),
+        });
+        expect(response.status).toBe(401);
+      });
+
+      test("rejects USER role (403)", async () => {
+        const response = await app.request("/routes", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${TEST_TOKENS.USER}` },
+          body: makeFormData(),
+        });
+        expect(response.status).toBe(403);
+      });
+
+      test("allows LEADER role", async () => {
+        const response = await app.request("/routes", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${TEST_TOKENS.LEADER}` },
+          body: makeFormData(),
+        });
+        expect(response.status).toBe(201);
+      });
+
+      test("allows ADMIN role", async () => {
+        const response = await app.request("/routes", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${TEST_TOKENS.ADMIN}` },
+          body: makeFormData(),
+        });
+        expect(response.status).toBe(201);
+      });
+
+      test("rejects invalid token (401)", async () => {
+        const response = await app.request("/routes", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${TEST_TOKENS.INVALID}` },
+          body: makeFormData(),
+        });
+        expect(response.status).toBe(401);
+      });
+    });
+
+    describe("PUT /routes/:id - Update route", () => {
+      const makeFormData = () => {
+        const fd = new FormData();
+        fd.append("name", "Updated Route");
+        return fd;
+      };
+
+      test("rejects guests (401)", async () => {
+        const response = await app.request("/routes/test-route-id", {
+          method: "PUT",
+          body: makeFormData(),
+        });
+        expect(response.status).toBe(401);
+      });
+
+      test("rejects USER role (403)", async () => {
+        const response = await app.request("/routes/test-route-id", {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${TEST_TOKENS.USER}` },
+          body: makeFormData(),
+        });
+        expect(response.status).toBe(403);
+      });
+
+      test("allows LEADER role", async () => {
+        const response = await app.request("/routes/test-route-id", {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${TEST_TOKENS.LEADER}` },
+          body: makeFormData(),
+        });
+        expect(response.status).toBe(200);
+      });
+
+      test("allows ADMIN role", async () => {
+        const response = await app.request("/routes/test-route-id", {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${TEST_TOKENS.ADMIN}` },
+          body: makeFormData(),
+        });
+        expect(response.status).toBe(200);
+      });
+    });
+
+    describe("DELETE /routes/:id - Delete route", () => {
+      test("rejects guests (401)", async () => {
+        const response = await app.request("/routes/test-route-id", {
+          method: "DELETE",
+        });
+        expect(response.status).toBe(401);
+      });
+
+      test("rejects USER role (403)", async () => {
+        const response = await app.request("/routes/test-route-id", {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${TEST_TOKENS.USER}` },
+        });
+        expect(response.status).toBe(403);
+      });
+
+      test("allows LEADER role", async () => {
+        const response = await app.request("/routes/test-route-id", {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${TEST_TOKENS.LEADER}` },
+        });
+        expect(response.status).toBe(200);
+      });
+
+      test("allows ADMIN role", async () => {
+        const response = await app.request("/routes/test-route-id", {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${TEST_TOKENS.ADMIN}` },
+        });
+        expect(response.status).toBe(200);
+      });
     });
   });
 });

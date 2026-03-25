@@ -180,6 +180,24 @@ export const repeatingRideRelations = relations(repeatingRides, ({ many }) => ({
   rides: many(rides),
 }));
 
+// Routes (named GPX routes with static map images)
+export const routes = createTable("routes", {
+  id: t.text().primaryKey(),
+  name: t.varchar({ length: 255 }).notNull(),
+  distance: t.integer(),
+  externalUrl: t.text(),
+  gpx: t.text(),
+  mapImageUrl: t.text(),
+  createdAt: t
+    .timestamp({ precision: 3, mode: "string" })
+    .defaultNow()
+    .notNull(),
+  updatedAt: t
+    .timestamp({ precision: 3, mode: "string" })
+    .defaultNow()
+    .notNull(),
+});
+
 // Archived Rides (for historical data)
 export const archivedRides = createTable(
   "archived_rides",

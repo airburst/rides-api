@@ -1,0 +1,39 @@
+meta {
+  name: Update Route
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/routes/:id
+  body: multipart-form
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+params:path {
+  id: test-route-id
+}
+
+body:multipart-form {
+  name: Updated Route Name
+  externalUrl: https://ridewithgps.com/routes/12345
+}
+
+docs {
+  # Update Route
+
+  Update route metadata. All fields are optional.
+  If a new `gpx` file is provided, distance is recomputed and the map image is regenerated.
+
+  ## Authentication
+  Required - Bearer token with LEADER or ADMIN role.
+
+  ## Form Fields
+  - `name` (optional): New route name
+  - `externalUrl` (optional): Link to Strava/RideWithGPS page
+  - `gpx` (optional): New GPX file — triggers map image regeneration
+}
