@@ -16,4 +16,4 @@ source .env.local
 curl -X POST http://localhost:3001/routes \
   -H "Authorization: Bearer $TOKEN" \
   -F "name=Plain Sailing" \
-  -F "gpx=@/Users/mark/Downloads/PlainSailing.gpx;type=application/gpx+xml"
+  -F "gpx=@/Users/mark/Downloads/KembleRound100.gpx;type=application/gpx+xml"
