@@ -94,7 +94,7 @@ riderhqRouter.post("/", async (c) => {
     const response = await fetch(query, {
       headers: { Authorization },
     });
-    return response.json() as unknown as MembersResponse;
+    return response.json() as Promise<MembersResponse>;
   };
 
   // Fetch all members with pagination

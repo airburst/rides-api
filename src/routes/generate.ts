@@ -137,12 +137,12 @@ generateRouter.post("/", async (c) => {
         where: eq(repeatingRides.id, scheduleId),
       });
       if (template) {
-        templates.push(template as RepeatingRideDb);
+        templates.push(template);
       }
     } else {
       // All templates
       const allTemplates = await db.query.repeatingRides.findMany();
-      templates = allTemplates as RepeatingRideDb[];
+      templates = allTemplates;
     }
 
     // Generate ride sets from templates
