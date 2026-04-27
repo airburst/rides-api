@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.6.3
+
+### Patch Changes
+
+- d176f63: Update Hono and dependencies
+
 ## 1.6.2
 
 ### Patch Changes
