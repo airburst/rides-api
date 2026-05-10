@@ -18,4 +18,10 @@ ALTER TABLE "archived_users_on_rides" RENAME CONSTRAINT "bcc_archived_users_on_r
 ALTER TABLE "verification_tokens" RENAME CONSTRAINT "bcc_verification_tokens_identifier_token_pk" TO "verification_tokens_identifier_token_pk";--> statement-breakpoint
 ALTER INDEX "bcc_rides_name_index" RENAME TO "rides_name_index";--> statement-breakpoint
 ALTER INDEX "bcc_archived_rides_name_index" RENAME TO "archived_rides_name_index";--> statement-breakpoint
-ALTER INDEX "bcc_repeating_rides_name_index" RENAME TO "repeating_rides_name_index";
+ALTER INDEX "bcc_repeating_rides_name_index" RENAME TO "repeating_rides_name_index";--> statement-breakpoint
+ALTER TABLE "users" RENAME CONSTRAINT "bcc_users_pkey" TO "users_pkey";--> statement-breakpoint
+ALTER TABLE "rides" RENAME CONSTRAINT "bcc_rides_pkey" TO "rides_pkey";--> statement-breakpoint
+ALTER TABLE "repeating_rides" RENAME CONSTRAINT "bcc_repeating_rides_pkey" TO "repeating_rides_pkey";--> statement-breakpoint
+ALTER TABLE "archived_rides" RENAME CONSTRAINT "bcc_archived_rides_pkey" TO "archived_rides_pkey";--> statement-breakpoint
+ALTER TABLE "sessions" RENAME CONSTRAINT "bcc_sessions_pkey" TO "sessions_pkey";--> statement-breakpoint
+ALTER TABLE "memberships" RENAME CONSTRAINT "bcc_membership_pkey" TO "memberships_pkey";
