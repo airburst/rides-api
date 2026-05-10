@@ -11,7 +11,6 @@ import {
 export interface AuthUser {
   id: string;
   auth0Id: string;
-  role: string;
   isSuperAdmin: boolean;
   name: string | null;
   email: string | null;
@@ -76,7 +75,6 @@ export const authMiddleware = createMiddleware<{
     c.set("user", {
       id: user.id,
       auth0Id: payload.sub,
-      role: user.role ?? "USER",
       isSuperAdmin: user.isSuperAdmin,
       name: user.name,
       email: user.email,
@@ -104,7 +102,6 @@ export const optionalAuth = createMiddleware<{
         c.set("user", {
           id: user.id,
           auth0Id: payload.sub,
-          role: user.role ?? "USER",
           isSuperAdmin: user.isSuperAdmin,
           name: user.name,
           email: user.email,
@@ -136,15 +133,3 @@ export function getAuthUser(c: { get: (key: "user") => AuthUser | undefined }) {
   return user;
 }
 
-// Role check helper (legacy — reads user.role; prefer requireClubRole)
-export const requireRole = (...allowedRoles: string[]) => {
-  return createMiddleware<{ Variables: { user: AuthUser } }>(
-    async (c, next) => {
-      const user = c.get("user");
-      if (!allowedRoles.includes(user.role)) {
-        return c.json({ error: "Forbidden" }, 403);
-      }
-      await next();
-    },
-  );
-};

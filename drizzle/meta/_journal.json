@@ -92,6 +92,13 @@
       "when": 1778430977611,
       "tag": "0012_backfill_bcc_club",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1778432475920,
+      "tag": "0013_finalize_multitenant",
+      "breakpoints": true
     }
   ]
 }

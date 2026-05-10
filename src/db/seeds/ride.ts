@@ -52,6 +52,7 @@ export default async function seed(db: Db) {
 
     return {
       ...ride,
+      clubId: "bcc",
       rideDate,
     };
   });

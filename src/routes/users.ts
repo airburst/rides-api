@@ -84,7 +84,6 @@ usersRouter.get("/", requireAuth, requireClubRole("ADMIN"), async (c) => {
       name: true,
       email: true,
       image: true,
-      role: true,
       membershipId: true,
       membershipStatus: true,
     } as const;

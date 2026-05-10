@@ -43,7 +43,6 @@ export const users = createTable(
     imageLarge: t.text(),
     mobile: t.varchar({ length: 255 }),
     emergency: t.varchar({ length: 255 }),
-    role: roleEnum().default("USER"),
     isSuperAdmin: t.boolean().notNull().default(false),
     preferences: t.json().default({ units: "km" }),
     membershipId: t.text(),
@@ -135,7 +134,10 @@ export const rides = createTable(
   "rides",
   {
     id: t.text().primaryKey(),
-    clubId: t.text().references(() => clubs.id),
+    clubId: t
+      .text()
+      .notNull()
+      .references(() => clubs.id),
     name: t.varchar({ length: 255 }).notNull(),
     rideGroup: t.varchar({ length: 255 }),
     rideDate: t
@@ -233,7 +235,10 @@ export const repeatingRides = createTable(
   "repeating_rides",
   {
     id: t.text().primaryKey(),
-    clubId: t.text().references(() => clubs.id),
+    clubId: t
+      .text()
+      .notNull()
+      .references(() => clubs.id),
     name: t.varchar({ length: 255 }).notNull(),
     schedule: t.text().notNull(),
     winterStartTime: t.varchar({ length: 255 }),
@@ -269,7 +274,10 @@ export const archivedRides = createTable(
   "archived_rides",
   {
     id: t.text().primaryKey(),
-    clubId: t.text().references(() => clubs.id),
+    clubId: t
+      .text()
+      .notNull()
+      .references(() => clubs.id),
     name: t.varchar({ length: 255 }).notNull(),
     rideGroup: t.varchar({ length: 255 }),
     rideDate: t
@@ -315,7 +323,10 @@ export const memberships = createTable(
   {
     system: t.text().notNull().default("RiderHQ"),
     memberId: t.text().primaryKey().notNull(),
-    clubId: t.text().references(() => clubs.id),
+    clubId: t
+      .text()
+      .notNull()
+      .references(() => clubs.id),
     userId: t.text().notNull(),
     handle: t.text().notNull(),
     isUser: t.boolean().notNull(),
