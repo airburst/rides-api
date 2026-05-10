@@ -12,6 +12,7 @@ export interface AuthUser {
   id: string;
   auth0Id: string;
   role: string;
+  isSuperAdmin: boolean;
   name: string | null;
   email: string | null;
 }
@@ -76,6 +77,7 @@ export const authMiddleware = createMiddleware<{
       id: user.id,
       auth0Id: payload.sub,
       role: user.role ?? "USER",
+      isSuperAdmin: user.isSuperAdmin,
       name: user.name,
       email: user.email,
     });
@@ -103,6 +105,7 @@ export const optionalAuth = createMiddleware<{
           id: user.id,
           auth0Id: payload.sub,
           role: user.role ?? "USER",
+          isSuperAdmin: user.isSuperAdmin,
           name: user.name,
           email: user.email,
         });
