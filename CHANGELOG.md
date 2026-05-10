@@ -1,5 +1,11 @@
 # Change Log
 
+## 1.6.4
+
+### Patch Changes
+
+- d34df8c: Update dependencies
+
 ## 1.6.3
 
 ### Patch Changes
