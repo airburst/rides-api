@@ -1,5 +1,29 @@
 # Change Log
 
+## 2.0.0
+
+### Major Changes
+
+- 53655f2: Multi-tenant API. **Breaking** — every authed request now requires `X-Club-Id` (header) or `?club=<slug>` (query), validated against `user_clubs` membership. Compat-mode default (`STRICT_TENANCY` unset) falls back to `DEFAULT_CLUB_SLUG` (default `bcc`) so the legacy frontend keeps working until it's updated; flip `STRICT_TENANCY=true` for hard 400s on missing club.
+  - Per-club roles via `user_clubs.role`; `users.role` removed.
+  - Global `users.is_super_admin` bypasses all club checks.
+  - New `/clubs` management endpoints (CRUD, members, role updates).
+  - `/generate` now requires super-admin (was ADMIN); loops all clubs.
+  - `/riderhq` BCC-scoped at code level (sunsetting feature; env vars only).
+  - `/archive` operates globally as before; archived rows preserve clubId.
+  - Cache keys gain clubId prefix: `rides:${clubId}:list:*`, `rides:${clubId}:detail:*`.
+  - `/users/me` payload gains `clubs` array (per-club role memberships); legacy `role` field removed from user records.
+
+  Migration path for production: run `bun run db:migrate` (applies 0010–0013 in order). After deploy, set yourself as super-admin: `UPDATE users SET is_super_admin = true WHERE email = 'you@example.com';`. Frontend update can land any time before flipping `STRICT_TENANCY=true`.
+
+### Minor Changes
+
+- 76c7fdb: Multi-tenancy schema (additive). New tables `clubs`, `user_clubs`, `club_api_keys`. Nullable `club_id` columns on rides/repeating_rides/archived_rides/memberships. New `users.is_super_admin` boolean. BCC seeded as default club; existing data backfilled to it. `users.role` retained for now (dropped in finalize migration once code paths switch to `user_clubs.role`).
+
+### Patch Changes
+
+- 4266672: Drop `bcc_` table prefix. Tables renamed via ALTER TABLE; `membership` → `memberships` plural at the same time. No behaviour change. FK constraints and indexes renamed to match. Prep work for multi-tenancy.
+
 ## 1.6.4
 
 ### Patch Changes
