@@ -3,6 +3,7 @@ const { RRule } = pkg;
 
 interface RepeatingRideDb {
   id?: string;
+  clubId?: string | null;
   name: string;
   schedule: string;
   winterStartTime?: string | null;

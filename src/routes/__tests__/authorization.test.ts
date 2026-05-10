@@ -9,7 +9,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { Hono } from "hono";
-import { TEST_TOKENS, TEST_USERS } from "../../test/auth.js";
+import { TEST_CLUB, TEST_TOKENS, TEST_USERS } from "../../test/auth.js";
 
 // Mock environment variables for testing
 process.env.API_KEY = "test-api-key-12345";
@@ -29,6 +29,10 @@ const usersByAuth0Id: Record<string, any> = {
   [TEST_USERS.ADMIN.auth0Id]: {
     providerAccountId: TEST_USERS.ADMIN.auth0Id,
     users: TEST_USERS.ADMIN,
+  },
+  [TEST_USERS.SUPERADMIN.auth0Id]: {
+    providerAccountId: TEST_USERS.SUPERADMIN.auth0Id,
+    users: TEST_USERS.SUPERADMIN,
   },
 };
 
@@ -61,6 +65,21 @@ const mockDbQuery = {
   repeatingRides: {
     findFirst: mock(() => Promise.resolve(null as any)),
     findMany: mock(() => Promise.resolve([] as any[])),
+  },
+  clubs: {
+    findFirst: mock(() => Promise.resolve(TEST_CLUB as any)),
+  },
+  userClubs: {
+    findFirst: mock(() => {
+      // Membership matches the role of the currently authed user
+      if (lastRequestedAuth0Id && usersByAuth0Id[lastRequestedAuth0Id]) {
+        return Promise.resolve({
+          role: usersByAuth0Id[lastRequestedAuth0Id].users.role,
+        });
+      }
+      // Public/unauthed lookups: return null (membership-check skipped server-side)
+      return Promise.resolve(null);
+    }),
   },
 };
 
@@ -103,6 +122,9 @@ const mockVerifyAuth0Token = mock((token: string) => {
     case TEST_TOKENS.ADMIN:
       lastRequestedAuth0Id = TEST_USERS.ADMIN.auth0Id;
       return Promise.resolve({ sub: TEST_USERS.ADMIN.auth0Id });
+    case TEST_TOKENS.SUPERADMIN:
+      lastRequestedAuth0Id = TEST_USERS.SUPERADMIN.auth0Id;
+      return Promise.resolve({ sub: TEST_USERS.SUPERADMIN.auth0Id });
     case TEST_TOKENS.INVALID:
     case TEST_TOKENS.EXPIRED:
       return Promise.reject(new Error("Invalid token"));
@@ -1066,7 +1088,7 @@ describe("🔐 Authorization Tests (CRITICAL)", () => {
     });
   });
 
-  describe("Generate Route - API Key or ADMIN", () => {
+  describe("Generate Route - API Key or super-admin", () => {
     describe("POST /generate - Generate rides from templates", () => {
       test("rejects guests (401)", async () => {
         const response = await app.request("/generate", {
@@ -1091,10 +1113,18 @@ describe("🔐 Authorization Tests (CRITICAL)", () => {
         expect(response.status).toBe(403);
       });
 
-      test("allows ADMIN JWT", async () => {
+      test("rejects ADMIN JWT (not super-admin) (403)", async () => {
         const response = await app.request("/generate", {
           method: "POST",
           headers: { Authorization: `Bearer ${TEST_TOKENS.ADMIN}` },
+        });
+        expect(response.status).toBe(403);
+      });
+
+      test("allows super-admin JWT", async () => {
+        const response = await app.request("/generate", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${TEST_TOKENS.SUPERADMIN}` },
         });
         expect(response.status).toBe(200);
       });

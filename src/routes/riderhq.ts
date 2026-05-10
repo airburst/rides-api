@@ -1,8 +1,12 @@
+import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db/index.js";
-import { memberships } from "../db/schema/index.js";
+import { clubs, memberships } from "../db/schema/index.js";
 
 export const riderhqRouter = new Hono();
+
+// RiderHQ integration is BCC-only. Resolve once per request.
+const BCC_SLUG = "bcc";
 
 // Types
 interface MemberData {
@@ -112,15 +116,27 @@ riderhqRouter.post("/", async (c) => {
     return allMembers;
   };
 
+  // Resolve BCC club so memberships are scoped to it
+  const bcc = await db.query.clubs.findFirst({
+    where: eq(clubs.slug, BCC_SLUG),
+  });
+  if (!bcc) {
+    return c.json(
+      { success: false, message: "BCC club not found in database" },
+      500,
+    );
+  }
+
   try {
     const members = await fetchAllMembers();
 
     if (members.length > 0) {
-      // Truncate and refill table
+      // Truncate and refill BCC's memberships
+      const rows = members.map((m) => ({ ...m, clubId: bcc.id }));
       await db.transaction(async (tx) => {
-        await tx.delete(memberships);
-        // @ts-expect-error - type mismatch on optional fields
-        await tx.insert(memberships).values(members);
+        await tx.delete(memberships).where(eq(memberships.clubId, bcc.id));
+        // @ts-expect-error - drizzle's insert type is stricter than Member shape on optional fields
+        await tx.insert(memberships).values(rows);
       });
     }
 

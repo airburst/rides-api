@@ -11,7 +11,7 @@ import {
 export interface AuthUser {
   id: string;
   auth0Id: string;
-  role: string;
+  isSuperAdmin: boolean;
   name: string | null;
   email: string | null;
 }
@@ -75,7 +75,7 @@ export const authMiddleware = createMiddleware<{
     c.set("user", {
       id: user.id,
       auth0Id: payload.sub,
-      role: user.role ?? "USER",
+      isSuperAdmin: user.isSuperAdmin,
       name: user.name,
       email: user.email,
     });
@@ -102,7 +102,7 @@ export const optionalAuth = createMiddleware<{
         c.set("user", {
           id: user.id,
           auth0Id: payload.sub,
-          role: user.role ?? "USER",
+          isSuperAdmin: user.isSuperAdmin,
           name: user.name,
           email: user.email,
         });
@@ -114,15 +114,22 @@ export const optionalAuth = createMiddleware<{
   await next();
 });
 
-// Role check helper
-export const requireRole = (...allowedRoles: string[]) => {
-  return createMiddleware<{ Variables: { user: AuthUser } }>(
-    async (c, next) => {
-      const user = c.get("user");
-      if (!allowedRoles.includes(user.role)) {
-        return c.json({ error: "Forbidden" }, 403);
-      }
-      await next();
-    },
-  );
-};
+// Gate that checks user is set (use after optionalAuth when auth is required)
+export const requireAuth = createMiddleware<{
+  Variables: { user?: AuthUser };
+}>(async (c, next) => {
+  if (!c.get("user")) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  await next();
+});
+
+// Type-safe accessor for handlers that run after requireAuth.
+export function getAuthUser(c: { get: (key: "user") => AuthUser | undefined }) {
+  const user = c.get("user");
+  if (!user) {
+    throw new Error("getAuthUser called without authenticated user");
+  }
+  return user;
+}
+

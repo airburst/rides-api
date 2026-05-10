@@ -68,12 +68,12 @@ archiveRouter.post("/", async (c) => {
 
       // Delete riders (raw SQL for date comparison)
       await tx.execute(
-        sql`DELETE FROM "bcc_users_on_rides" WHERE "ride_id" IN (SELECT id FROM "bcc_rides" WHERE "ride_date" < TO_TIMESTAMP(${runDate}, 'YYYY-MM-DD'))`,
+        sql`DELETE FROM "users_on_rides" WHERE "ride_id" IN (SELECT id FROM "rides" WHERE "ride_date" < TO_TIMESTAMP(${runDate}, 'YYYY-MM-DD'))`,
       );
 
       // Delete rides
       await tx.execute(
-        sql`DELETE FROM "bcc_rides" WHERE "ride_date" < TO_TIMESTAMP(${runDate}, 'YYYY-MM-DD')`,
+        sql`DELETE FROM "rides" WHERE "ride_date" < TO_TIMESTAMP(${runDate}, 'YYYY-MM-DD')`,
       );
     });
 

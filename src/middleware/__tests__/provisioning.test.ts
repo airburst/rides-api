@@ -2,7 +2,7 @@
  * JIT User Provisioning Tests
  *
  * Tests that new Auth0 users are automatically provisioned
- * with bcc_users + bcc_accounts rows on first authenticated request.
+ * with users + accounts rows on first authenticated request.
  */
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
@@ -25,7 +25,7 @@ const existingUser = {
   id: "existing-id",
   name: "Existing User",
   email: "existing@test.com",
-  role: "USER",
+  isSuperAdmin: false,
   mobile: "1234567890",
   emergency: "Contact 0987654321",
 };
@@ -70,7 +70,7 @@ const mockDbQuery = {
           id: u.id,
           name: u.name,
           email: u.email,
-          role: "USER",
+          isSuperAdmin: false,
         });
       }
       return Promise.resolve(null);
@@ -221,14 +221,14 @@ describe("JIT user provisioning", () => {
     expect(insertedUsers[0].email).toBe(`${NEW_USER_SUB}@placeholder.local`);
   });
 
-  test("provisioned user gets USER role", async () => {
+  test("provisioned user is not super-admin by default", async () => {
     const res = await app.request("/test", {
       headers: { Authorization: `Bearer ${NEW_USER_TOKEN}` },
     });
 
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.user.role).toBe("USER");
+    expect(body.user.isSuperAdmin).toBe(false);
   });
 
   test("provisioning runs inside a transaction", async () => {

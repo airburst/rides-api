@@ -16,6 +16,7 @@ export const TEST_TOKENS = {
   USER: "test-token-user",
   LEADER: "test-token-leader",
   ADMIN: "test-token-admin",
+  SUPERADMIN: "test-token-superadmin",
   INVALID: "test-token-invalid",
   EXPIRED: "test-token-expired",
 };
@@ -28,6 +29,7 @@ export const TEST_USERS = {
     id: "test-user-id",
     auth0Id: "auth0|test-user",
     role: "USER" as Role,
+    isSuperAdmin: false,
     name: "Test User",
     email: "user@test.com",
     mobile: "1234567890",
@@ -36,6 +38,7 @@ export const TEST_USERS = {
     id: "test-leader-id",
     auth0Id: "auth0|test-leader",
     role: "LEADER" as Role,
+    isSuperAdmin: false,
     name: "Test Leader",
     email: "leader@test.com",
     mobile: "0987654321",
@@ -44,10 +47,26 @@ export const TEST_USERS = {
     id: "test-admin-id",
     auth0Id: "auth0|test-admin",
     role: "ADMIN" as Role,
+    isSuperAdmin: false,
     name: "Test Admin",
     email: "admin@test.com",
     mobile: "5555555555",
   },
+  SUPERADMIN: {
+    id: "test-superadmin-id",
+    auth0Id: "auth0|test-superadmin",
+    role: "ADMIN" as Role,
+    isSuperAdmin: true,
+    name: "Test Super-Admin",
+    email: "superadmin@test.com",
+    mobile: "5555555556",
+  },
+};
+
+export const TEST_CLUB = {
+  id: "bcc",
+  slug: "bcc",
+  name: "Bristol Cycling Club",
 };
 
 /**

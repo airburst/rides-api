@@ -145,19 +145,39 @@ Use `as any` for flexible mocks:
 findFirst: mock(() => Promise.resolve(null as any));
 ```
 
+## Tenant scoping
+
+The API is multi-tenant. Each request resolves to one club via `resolveClub` middleware:
+
+- **Authed**: `X-Club-Id` header. Validated against `user_clubs` membership unless `users.is_super_admin`.
+- **Public**: `?club=<slug>` query param.
+- **Compat mode** (default, `STRICT_TENANCY` unset): missing identifier → falls back to `DEFAULT_CLUB_SLUG` env (default `bcc`). Strict mode (`STRICT_TENANCY=true`) → 400 on missing.
+
+**Tenant-scoping is non-negotiable** for these tables: `rides`, `repeating_rides`, `archived_rides`, `memberships`. Every query must include `eq(table.clubId, c.get("club").id)`. Cache keys must include `clubId`. Use `clubCachePattern(clubId)` for invalidation; never `rides:*` global.
+
+`/users/me` is the one route that doesn't require a club context — it returns the user record plus their `clubs` array (per-club roles).
+
 ## Authorization Matrix
+
+Roles live on `user_clubs.role` (per-club: USER, LEADER, ADMIN). `users.is_super_admin: boolean` is the only global authority and bypasses all club checks.
 
 **Critical Security Rules:**
 
-- **Rides**: Public GET, LEADER/ADMIN for modifications
-- **Repeating Rides**: ADMIN only for all operations
+- **Rides**: Public GET (?club= required), LEADER/ADMIN of the active club for modifications
+- **Repeating Rides**: club ADMIN for all operations
 - **Users**:
-  - GET /users/me → Any authenticated user
-  - GET /users → ADMIN only
-  - GET /users/:id → Self or ADMIN
-  - PATCH /users/:id → Self or ADMIN (non-ADMINs cannot change roles)
-- **Generate**: API key OR ADMIN JWT (403 for USER/LEADER)
-- **Archive**: API key ONLY (rejects all JWTs)
+  - `GET /users/me` → any authenticated user (no club scope)
+  - `GET /users` → club ADMIN; lists members of active club
+  - `GET /users/:id` → self or club ADMIN; target must be in same club (super-admin bypasses)
+  - `PATCH /users/:id` → self or club ADMIN; role updates write to `user_clubs.role` for active club
+- **Clubs**:
+  - `POST /clubs` → super-admin only
+  - `GET /clubs` → user's clubs (or all if super-admin)
+  - `GET /clubs/:slug` → member or super-admin
+  - `PATCH /clubs/:slug`, `*/members`, `*/members/:userId` → club ADMIN or super-admin
+- **Generate**: super-admin only (API key or super-admin JWT). Loops all clubs.
+- **Archive**: API key ONLY. Operates globally on rides table (clubId carried through to archive).
+- **RiderHQ**: API key ONLY. BCC-scoped at code level; sunsetting feature.
 
 ## Deployment
 

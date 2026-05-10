@@ -20,11 +20,10 @@ interface GenerateResult {
 }
 
 // Helper to create rides from a RideSet
-const createRidesFromSet = async ({
-  id,
-  rides: rideList,
-  schedule,
-}: RideSet): Promise<GenerateResult> => {
+const createRidesFromSet = async (
+  { id, rides: rideList, schedule }: RideSet,
+  clubId: string,
+): Promise<GenerateResult> => {
   if (rideList.length === 0) {
     return { scheduleId: id, count: 0 };
   }
@@ -33,6 +32,7 @@ const createRidesFromSet = async ({
     // Insert all rides
     const insertData = rideList.map((ride) => ({
       id: crypto.randomUUID(),
+      clubId,
       name: ride.name,
       rideDate: ride.rideDate,
       rideGroup: ride.rideGroup,
@@ -90,9 +90,9 @@ generateRouter.post("/", async (c) => {
       });
 
       hasValidToken = true;
-      // Must be ADMIN - users is always present due to foreign key
+      // Super-admin only
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      if (account?.users?.role === "ADMIN") {
+      if (account?.users?.isSuperAdmin === true) {
         isUserAuth = true;
       }
     } catch {
@@ -145,15 +145,22 @@ generateRouter.post("/", async (c) => {
       templates = allTemplates;
     }
 
-    // Generate ride sets from templates
-    const rideSets = templates.map((template) =>
-      makeRidesInPeriod(template, generateFromDate),
-    );
+    // Generate ride sets from templates, paired with their club.
+    // Skip orphan templates (clubId nullable during phase 1 transition).
+    const rideSets = templates.flatMap((template) => {
+      if (!template.clubId) return [];
+      return [
+        {
+          set: makeRidesInPeriod(template, generateFromDate),
+          clubId: template.clubId,
+        },
+      ];
+    });
 
     // Create rides sequentially
     const results: GenerateResult[] = [];
-    for (const rideSet of rideSets) {
-      const result = await createRidesFromSet(rideSet);
+    for (const { set, clubId } of rideSets) {
+      const result = await createRidesFromSet(set, clubId);
       results.push(result);
     }
 
