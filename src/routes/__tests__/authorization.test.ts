@@ -30,6 +30,10 @@ const usersByAuth0Id: Record<string, any> = {
     providerAccountId: TEST_USERS.ADMIN.auth0Id,
     users: TEST_USERS.ADMIN,
   },
+  [TEST_USERS.SUPERADMIN.auth0Id]: {
+    providerAccountId: TEST_USERS.SUPERADMIN.auth0Id,
+    users: TEST_USERS.SUPERADMIN,
+  },
 };
 
 // Keep track of the last auth0 ID requested for mocking
@@ -118,6 +122,9 @@ const mockVerifyAuth0Token = mock((token: string) => {
     case TEST_TOKENS.ADMIN:
       lastRequestedAuth0Id = TEST_USERS.ADMIN.auth0Id;
       return Promise.resolve({ sub: TEST_USERS.ADMIN.auth0Id });
+    case TEST_TOKENS.SUPERADMIN:
+      lastRequestedAuth0Id = TEST_USERS.SUPERADMIN.auth0Id;
+      return Promise.resolve({ sub: TEST_USERS.SUPERADMIN.auth0Id });
     case TEST_TOKENS.INVALID:
     case TEST_TOKENS.EXPIRED:
       return Promise.reject(new Error("Invalid token"));
@@ -1081,7 +1088,7 @@ describe("🔐 Authorization Tests (CRITICAL)", () => {
     });
   });
 
-  describe("Generate Route - API Key or ADMIN", () => {
+  describe("Generate Route - API Key or super-admin", () => {
     describe("POST /generate - Generate rides from templates", () => {
       test("rejects guests (401)", async () => {
         const response = await app.request("/generate", {
@@ -1106,10 +1113,18 @@ describe("🔐 Authorization Tests (CRITICAL)", () => {
         expect(response.status).toBe(403);
       });
 
-      test("allows ADMIN JWT", async () => {
+      test("rejects ADMIN JWT (not super-admin) (403)", async () => {
         const response = await app.request("/generate", {
           method: "POST",
           headers: { Authorization: `Bearer ${TEST_TOKENS.ADMIN}` },
+        });
+        expect(response.status).toBe(403);
+      });
+
+      test("allows super-admin JWT", async () => {
+        const response = await app.request("/generate", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${TEST_TOKENS.SUPERADMIN}` },
         });
         expect(response.status).toBe(200);
       });

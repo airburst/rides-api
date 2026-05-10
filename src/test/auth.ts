@@ -16,6 +16,7 @@ export const TEST_TOKENS = {
   USER: "test-token-user",
   LEADER: "test-token-leader",
   ADMIN: "test-token-admin",
+  SUPERADMIN: "test-token-superadmin",
   INVALID: "test-token-invalid",
   EXPIRED: "test-token-expired",
 };
@@ -50,6 +51,15 @@ export const TEST_USERS = {
     name: "Test Admin",
     email: "admin@test.com",
     mobile: "5555555555",
+  },
+  SUPERADMIN: {
+    id: "test-superadmin-id",
+    auth0Id: "auth0|test-superadmin",
+    role: "ADMIN" as Role,
+    isSuperAdmin: true,
+    name: "Test Super-Admin",
+    email: "superadmin@test.com",
+    mobile: "5555555556",
   },
 };
 
