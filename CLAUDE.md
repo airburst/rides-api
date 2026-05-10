@@ -31,30 +31,39 @@ Cycling club ride management API. Bun runtime, Hono framework, Drizzle ORM, Post
 ### Request flow
 
 ```
-Request → CORS → Logger → Auth middleware → Route handler → DB query → Response
-                           ↓                                 ↓
-                     JWT verify (jose)              Cache check/invalidate (Redis)
-                     + accounts DB lookup
+Request → CORS → Logger → optionalAuth/authMiddleware → resolveClub → Route handler → DB query → Response
+                           ↓                              ↓                         ↓
+                     JWT verify (jose)          X-Club-Id / ?club=         Cache (Redis, club-scoped)
+                     + accounts DB lookup        + user_clubs membership
 ```
+
+### Multi-tenancy
+
+- Every request is scoped to a club. Authed clients send `X-Club-Id` header; public routes accept `?club=<slug>`.
+- `resolveClub` middleware validates membership via `user_clubs`; super-admins (`users.is_super_admin`) bypass.
+- Compat-mode (default): missing identifier → `DEFAULT_CLUB_SLUG` env (default `bcc`). `STRICT_TENANCY=true` flips to hard 400.
+- Per-club role lives on `user_clubs.role` (USER/LEADER/ADMIN). `users.role` no longer exists.
+- Use `requireClubRole(...)` (not `requireRole`) for role gates. Super-admin satisfies any gate.
 
 ### Auth: two patterns
 
-- **JWT auth** (`authMiddleware` / `optionalAuth`): verifies Auth0 JWT via JWKS, then looks up `accounts.providerAccountId` (Auth0 `sub`) joined to `users`. If no account row exists, JIT provisions a new `users` + `accounts` row using Auth0 `/userinfo`.
-- **API key auth** (`archive`, `riderhq`): static Bearer token check against `API_KEY` env var. `generate` accepts either API key OR ADMIN JWT.
+- **JWT auth** (`authMiddleware` / `optionalAuth`): verifies Auth0 JWT via JWKS, then looks up `accounts.providerAccountId` (Auth0 `sub`) joined to `users`. JIT provisions on first request.
+- **API key auth** (`archive`, `riderhq`, `generate`): static Bearer token check against `API_KEY` env var (the super-admin key for cron). `generate` also accepts a super-admin JWT.
 
 ### Database conventions
 
 - Plain table names (no prefix). Raw SQL (e.g. `archive.ts`) hardcodes these names — keep in sync with schema.
 - `casing: "snake_case"` in Drizzle config — camelCase TS properties auto-map to snake_case columns.
 - Single schema file: `src/db/schema/index.ts`.
-- Rides use soft-delete (`deleted: boolean`). Every ride query must include `eq(rides.deleted, false)`.
+- **Tenant scoping**: every query against rides/repeating_rides/archived_rides/memberships MUST include `eq(table.clubId, c.get("club").id)`. Forgetting this is a cross-tenant data leak.
+- Rides use soft-delete (`deleted: boolean`). Every ride query must include `eq(rides.deleted, false)` alongside the clubId predicate.
 - `rideLimit: -1` means unlimited (not `null`).
 
 ### Caching
 
 - Gated by `CACHE_ENABLED === "true"` (exact string match).
 - Cache invalidation calls use `void` (fire-and-forget, intentionally not awaited).
-- Only ride list and detail GET endpoints are cached. Mutations invalidate via `cacheInvalidatePattern("rides:list:*")`.
+- Only ride list and detail GET endpoints are cached. Cache keys carry clubId: `rides:${clubId}:list:*`, `rides:${clubId}:detail:*`. Use `clubCachePattern(clubId)` for per-club bulk invalidation; never use a global `rides:*` pattern.
 
 ## Key gotchas
 

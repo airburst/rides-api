@@ -57,8 +57,15 @@ AUTH0_AUDIENCE=https://api.your-app.com
 PORT=3001
 NODE_ENV=development
 
-# API Key for cron jobs
+# API Key for cron jobs (super-admin)
 API_KEY=your-secret-api-key
+
+# Multi-tenancy
+# DEFAULT_CLUB_SLUG: fallback club when no X-Club-Id header is sent (compat mode)
+DEFAULT_CLUB_SLUG=bcc
+# STRICT_TENANCY=true → require X-Club-Id on every authed request (400 if missing)
+# STRICT_TENANCY unset/false → fall back to DEFAULT_CLUB_SLUG
+STRICT_TENANCY=false
 
 # RiderHQ (optional)
 RIDERHQ_URL=https://www.riderhq.com
@@ -146,26 +153,44 @@ API test collection available in the `/bruno` folder. Import into [Bruno](https:
 
 ### Main Routes
 
-- `GET /health` - Health check
-- `GET /rides` - List rides
-- `GET /rides/:id` - Get ride details
-- `POST /rides` - Create ride (LEADER/ADMIN)
-- `PUT /rides/:id` - Update ride (LEADER/ADMIN)
-- `DELETE /rides/:id` - Delete ride (LEADER/ADMIN)
-- `POST /rides/:id/join` - Join a ride
-- `POST /rides/:id/leave` - Leave a ride
-- `GET /users/me` - Get current user
-- `GET /repeating-rides` - List repeating rides (ADMIN)
-- `POST /generate` - Generate rides from templates (ADMIN/API_KEY)
-- `POST /archive` - Archive old rides (API_KEY)
-- `POST /riderhq` - Sync members from RiderHQ (API_KEY)
+All authed routes require `X-Club-Id: <club-slug-or-id>` header (or rely on compat-mode default — see below). Public routes accept `?club=<slug>` query param. Roles below are per-club (USER/LEADER/ADMIN); super-admin (`users.is_super_admin`) bypasses all club checks.
+
+- `GET /health` - Health check (no club)
+- `GET /rides` - List rides (public, scoped to club)
+- `GET /rides/:id` - Get ride details (public, scoped to club)
+- `POST /rides` - Create ride (club LEADER/ADMIN)
+- `PUT /rides/:id` - Update ride (club LEADER/ADMIN)
+- `DELETE /rides/:id` - Delete ride (club LEADER/ADMIN)
+- `POST /rides/:id/join` / `leave` - Join/leave a ride (any authed; LEADER+ for others)
+- `GET /users/me` - Current user + per-club memberships (no club scope)
+- `GET /users` - List users in active club (club ADMIN)
+- `GET /repeating-rides` - List repeating rides (club ADMIN)
+- `GET /clubs` - List user's clubs
+- `POST /clubs` - Create a new club (super-admin)
+- `PATCH /clubs/:slug` - Update club settings (club ADMIN)
+- `POST /clubs/:slug/members` - Add user to club (club ADMIN)
+- `POST /generate` - Generate rides from templates (super-admin or `API_KEY`); loops all clubs
+- `POST /archive` - Archive old rides (`API_KEY`); operates globally
+- `POST /riderhq` - Sync BCC members from RiderHQ (`API_KEY`); BCC-only
 
 ## Authentication
 
 The API uses Auth0 JWT tokens for user authentication and API keys for automated endpoints.
 
-- User endpoints: `Authorization: Bearer <jwt-token>`
-- Cron endpoints: `Authorization: Bearer <api-key>`
+- User endpoints: `Authorization: Bearer <jwt-token>` + `X-Club-Id: <slug>` header
+- Cron endpoints: `Authorization: Bearer <api-key>` (super-admin)
+
+## Multi-tenancy
+
+Every authed request is scoped to a single club. The frontend should send `X-Club-Id` with the active club's slug or id; membership is validated server-side via the `user_clubs` junction table.
+
+While `STRICT_TENANCY` is unset (default), missing `X-Club-Id` falls back to `DEFAULT_CLUB_SLUG` (default `bcc`). This keeps a single-club frontend working while you add clubs and update the client. Flip `STRICT_TENANCY=true` to require explicit club identification.
+
+After running `bun run db:migrate` for the first time, mark yourself as super-admin so you can create new clubs:
+
+```sql
+UPDATE users SET is_super_admin = true WHERE email = 'you@example.com';
+```
 
 ## Deployment
 
