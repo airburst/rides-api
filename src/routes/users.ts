@@ -1,17 +1,26 @@
-import { asc, eq, ilike, or } from "drizzle-orm";
+import { and, asc, eq, ilike, inArray, or } from "drizzle-orm";
 import { Hono } from "hono";
 import { join } from "node:path";
 import sharp from "sharp";
 import { z } from "zod";
 import { db } from "../db/index.js";
-import { users } from "../db/schema/index.js";
+import { userClubs, users } from "../db/schema/index.js";
 import {
   authMiddleware,
-  requireRole,
+  getAuthUser,
+  optionalAuth,
+  requireAuth,
   type AuthUser,
 } from "../middleware/auth.js";
+import {
+  requireClubRole,
+  resolveClub,
+  type ClubContext,
+} from "../middleware/club.js";
 
-export const usersRouter = new Hono<{ Variables: { user: AuthUser } }>();
+interface Vars { user?: AuthUser; club: ClubContext }
+
+export const usersRouter = new Hono<{ Variables: Vars }>();
 
 // Validation schema for user updates
 const updateUserSchema = z.object({
@@ -19,58 +28,13 @@ const updateUserSchema = z.object({
   mobile: z.string().optional(),
   emergency: z.string().optional(),
   preferences: z.record(z.string(), z.unknown()).optional(),
+  // Role change applies to user_clubs.role for the active club
   role: z.enum(["USER", "LEADER", "ADMIN"]).optional(),
   membershipId: z.string().optional(),
   membershipStatus: z.string().optional(),
 });
 
-// GET /users - List all users (admin only)
-usersRouter.get("/", authMiddleware, requireRole("ADMIN"), async (c) => {
-  const query = c.req.query("q");
-
-  try {
-    let result;
-    if (query) {
-      const lowerQuery = `%${query.toLowerCase()}%`;
-      result = await db.query.users.findMany({
-        columns: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
-          role: true,
-          membershipId: true,
-          membershipStatus: true,
-        },
-        where: or(
-          ilike(users.name, lowerQuery),
-          ilike(users.email, lowerQuery),
-        ),
-        orderBy: [asc(users.name)],
-      });
-    } else {
-      result = await db.query.users.findMany({
-        columns: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
-          role: true,
-          membershipId: true,
-          membershipStatus: true,
-        },
-        orderBy: [asc(users.name)],
-      });
-    }
-
-    return c.json({ users: result });
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    return c.json({ error: "Failed to fetch users" }, 500);
-  }
-});
-
-// GET /users/me - Get current user
+// GET /users/me - current user + per-club memberships. Does not require a club context.
 usersRouter.get("/me", authMiddleware, async (c) => {
   const authUser = c.get("user");
 
@@ -83,24 +47,95 @@ usersRouter.get("/me", authMiddleware, async (c) => {
       return c.json({ error: "User not found" }, 404);
     }
 
-    return c.json({ user });
+    const memberships = await db
+      .select({ clubId: userClubs.clubId, role: userClubs.role })
+      .from(userClubs)
+      .where(eq(userClubs.userId, authUser.id));
+
+    return c.json({ user: { ...user, clubs: memberships } });
   } catch (error) {
     console.error("Error fetching user:", error);
     return c.json({ error: "Failed to fetch user" }, 500);
   }
 });
 
-// GET /users/:id - Get a specific user (self or admin)
-usersRouter.get("/:id", authMiddleware, async (c) => {
-  const authUser = c.get("user");
+// All other routes are scoped to an active club
+usersRouter.use("*", optionalAuth, resolveClub);
+
+// GET /users - List users in this club (club ADMIN only)
+usersRouter.get("/", requireAuth, requireClubRole("ADMIN"), async (c) => {
+  const club = c.get("club");
+  const query = c.req.query("q");
+
+  try {
+    // Find user IDs belonging to this club
+    const memberRows = await db
+      .select({ userId: userClubs.userId })
+      .from(userClubs)
+      .where(eq(userClubs.clubId, club.id));
+    const memberIds = memberRows.map((r) => r.userId);
+
+    if (memberIds.length === 0) {
+      return c.json({ users: [] });
+    }
+
+    const baseColumns = {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+      role: true,
+      membershipId: true,
+      membershipStatus: true,
+    } as const;
+
+    let result;
+    if (query) {
+      const lowerQuery = `%${query.toLowerCase()}%`;
+      result = await db.query.users.findMany({
+        columns: baseColumns,
+        where: and(
+          inArray(users.id, memberIds),
+          or(ilike(users.name, lowerQuery), ilike(users.email, lowerQuery)),
+        ),
+        orderBy: [asc(users.name)],
+      });
+    } else {
+      result = await db.query.users.findMany({
+        columns: baseColumns,
+        where: inArray(users.id, memberIds),
+        orderBy: [asc(users.name)],
+      });
+    }
+
+    return c.json({ users: result });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return c.json({ error: "Failed to fetch users" }, 500);
+  }
+});
+
+// GET /users/:id - Get a specific user (self or club ADMIN; target must be in same club)
+usersRouter.get("/:id", requireAuth, async (c) => {
+  const authUser = getAuthUser(c);
+  const club = c.get("club");
   const id = c.req.param("id");
 
-  // Users can only get their own profile, admins can get anyone
   const isSelf = authUser.id === id;
-  const isAdmin = authUser.role === "ADMIN";
+  const isAdmin = club.role === "ADMIN";
 
   if (!isSelf && !isAdmin) {
     return c.json({ error: "Forbidden" }, 403);
+  }
+
+  // Target must be in the active club (super-admin role is set to ADMIN by middleware → bypass)
+  if (!authUser.isSuperAdmin) {
+    const targetMembership = await db.query.userClubs.findFirst({
+      where: and(eq(userClubs.userId, id), eq(userClubs.clubId, club.id)),
+    });
+    if (!targetMembership) {
+      return c.json({ error: "User not found in this club" }, 404);
+    }
   }
 
   try {
@@ -119,14 +154,14 @@ usersRouter.get("/:id", authMiddleware, async (c) => {
   }
 });
 
-// PATCH /users/:id - Update a user (self or admin)
-usersRouter.patch("/:id", authMiddleware, async (c) => {
-  const authUser = c.get("user");
+// PATCH /users/:id - Update a user (self or club ADMIN). Role update writes to user_clubs.role.
+usersRouter.patch("/:id", requireAuth, async (c) => {
+  const authUser = getAuthUser(c);
+  const club = c.get("club");
   const id = c.req.param("id");
 
-  // Users can only update their own profile, admins can update anyone
   const isSelf = authUser.id === id;
-  const isAdmin = authUser.role === "ADMIN";
+  const isAdmin = club.role === "ADMIN";
 
   if (!isSelf && !isAdmin) {
     return c.json({ error: "Forbidden" }, 403);
@@ -149,25 +184,45 @@ usersRouter.patch("/:id", authMiddleware, async (c) => {
 
   const data = result.data;
 
-  // Non-admins cannot change role
   if (!isAdmin && data.role) {
     return c.json({ error: "Cannot change role" }, 403);
   }
 
-  // Build update object
+  // Verify target is in active club (super-admin bypass)
+  if (!authUser.isSuperAdmin) {
+    const targetMembership = await db.query.userClubs.findFirst({
+      where: and(eq(userClubs.userId, id), eq(userClubs.clubId, club.id)),
+    });
+    if (!targetMembership) {
+      return c.json({ error: "User not found in this club" }, 404);
+    }
+  }
+
+  // Build user-table update (everything except role)
   const updateData: Record<string, unknown> = {};
   if (data.name !== undefined) updateData.name = data.name;
   if (data.mobile !== undefined) updateData.mobile = data.mobile;
   if (data.emergency !== undefined) updateData.emergency = data.emergency;
   if (data.preferences !== undefined) updateData.preferences = data.preferences;
-  if (data.role !== undefined) updateData.role = data.role;
   if (data.membershipId !== undefined)
     updateData.membershipId = data.membershipId;
   if (data.membershipStatus !== undefined)
     updateData.membershipStatus = data.membershipStatus;
 
   try {
-    await db.update(users).set(updateData).where(eq(users.id, id));
+    if (Object.keys(updateData).length > 0) {
+      await db.update(users).set(updateData).where(eq(users.id, id));
+    }
+
+    if (data.role !== undefined && isAdmin) {
+      await db
+        .update(userClubs)
+        .set({ role: data.role })
+        .where(
+          and(eq(userClubs.userId, id), eq(userClubs.clubId, club.id)),
+        );
+    }
+
     return c.json({ success: true, id });
   } catch (error) {
     console.error("Update user error:", error);
@@ -176,16 +231,25 @@ usersRouter.patch("/:id", authMiddleware, async (c) => {
 });
 
 // POST /users/:id/avatar - Upload avatar image
-usersRouter.post("/:id/avatar", authMiddleware, async (c) => {
-  const authUser = c.get("user");
+usersRouter.post("/:id/avatar", requireAuth, async (c) => {
+  const authUser = getAuthUser(c);
+  const club = c.get("club");
   const id = c.req.param("id");
 
-  // Users can only update their own avatar, admins can update anyone
   const isSelf = authUser.id === id;
-  const isAdmin = authUser.role === "ADMIN";
+  const isAdmin = club.role === "ADMIN";
 
   if (!isSelf && !isAdmin) {
     return c.json({ error: "Forbidden" }, 403);
+  }
+
+  if (!authUser.isSuperAdmin) {
+    const targetMembership = await db.query.userClubs.findFirst({
+      where: and(eq(userClubs.userId, id), eq(userClubs.clubId, club.id)),
+    });
+    if (!targetMembership) {
+      return c.json({ error: "User not found in this club" }, 404);
+    }
   }
 
   try {
@@ -196,39 +260,32 @@ usersRouter.post("/:id/avatar", authMiddleware, async (c) => {
       return c.json({ error: "No file provided" }, 400);
     }
 
-    // Validate file type
     if (!file.type.startsWith("image/")) {
       return c.json({ error: "File must be an image" }, 400);
     }
 
-    // Validate file size (8MB)
     const MAX_FILE_SIZE = 8 * 1024 * 1024;
     if (file.size > MAX_FILE_SIZE) {
       return c.json({ error: "File size exceeds 8MB limit" }, 400);
     }
 
-    // Convert File to Buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Process images with Sharp
     const publicDir = join(process.cwd(), "public", "avatars");
 
-    // Create thumbnail (40x40)
     const thumbPath = join(publicDir, `${id}-thumb.webp`);
     await sharp(buffer)
       .resize(40, 40, { fit: "cover", position: "center" })
       .webp({ quality: 80 })
       .toFile(thumbPath);
 
-    // Create standard size (240x240)
     const standardPath = join(publicDir, `${id}.webp`);
     await sharp(buffer)
       .resize(240, 240, { fit: "cover", position: "center" })
       .webp({ quality: 85 })
       .toFile(standardPath);
 
-    // Update database with relative paths
     const imagePath = `/avatars/${id}-thumb.webp`;
     const imageLargePath = `/avatars/${id}.webp`;
 

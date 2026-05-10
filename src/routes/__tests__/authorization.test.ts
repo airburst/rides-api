@@ -9,7 +9,7 @@
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { Hono } from "hono";
-import { TEST_TOKENS, TEST_USERS } from "../../test/auth.js";
+import { TEST_CLUB, TEST_TOKENS, TEST_USERS } from "../../test/auth.js";
 
 // Mock environment variables for testing
 process.env.API_KEY = "test-api-key-12345";
@@ -61,6 +61,21 @@ const mockDbQuery = {
   repeatingRides: {
     findFirst: mock(() => Promise.resolve(null as any)),
     findMany: mock(() => Promise.resolve([] as any[])),
+  },
+  clubs: {
+    findFirst: mock(() => Promise.resolve(TEST_CLUB as any)),
+  },
+  userClubs: {
+    findFirst: mock(() => {
+      // Membership matches the role of the currently authed user
+      if (lastRequestedAuth0Id && usersByAuth0Id[lastRequestedAuth0Id]) {
+        return Promise.resolve({
+          role: usersByAuth0Id[lastRequestedAuth0Id].users.role,
+        });
+      }
+      // Public/unauthed lookups: return null (membership-check skipped server-side)
+      return Promise.resolve(null);
+    }),
   },
 };
 

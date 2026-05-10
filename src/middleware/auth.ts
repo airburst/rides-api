@@ -117,7 +117,26 @@ export const optionalAuth = createMiddleware<{
   await next();
 });
 
-// Role check helper
+// Gate that checks user is set (use after optionalAuth when auth is required)
+export const requireAuth = createMiddleware<{
+  Variables: { user?: AuthUser };
+}>(async (c, next) => {
+  if (!c.get("user")) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+  await next();
+});
+
+// Type-safe accessor for handlers that run after requireAuth.
+export function getAuthUser(c: { get: (key: "user") => AuthUser | undefined }) {
+  const user = c.get("user");
+  if (!user) {
+    throw new Error("getAuthUser called without authenticated user");
+  }
+  return user;
+}
+
+// Role check helper (legacy — reads user.role; prefer requireClubRole)
 export const requireRole = (...allowedRoles: string[]) => {
   return createMiddleware<{ Variables: { user: AuthUser } }>(
     async (c, next) => {

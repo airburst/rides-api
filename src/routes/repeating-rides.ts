@@ -4,14 +4,21 @@ import { z } from "zod";
 import { db } from "../db/index.js";
 import { repeatingRides, rides } from "../db/schema/index.js";
 import {
-  authMiddleware,
-  requireRole,
+  optionalAuth,
+  requireAuth,
   type AuthUser,
 } from "../middleware/auth.js";
+import {
+  requireClubRole,
+  resolveClub,
+  type ClubContext,
+} from "../middleware/club.js";
 
-export const repeatingRidesRouter = new Hono<{
-  Variables: { user: AuthUser };
-}>();
+interface Vars { user?: AuthUser; club: ClubContext }
+
+export const repeatingRidesRouter = new Hono<{ Variables: Vars }>();
+
+repeatingRidesRouter.use("*", optionalAuth, resolveClub);
 
 // Validation schema for repeating ride
 const repeatingRideSchema = z.object({
@@ -28,14 +35,16 @@ const repeatingRideSchema = z.object({
   rideLimit: z.number().int().optional(),
 });
 
-// GET /repeating-rides - List all repeating rides (admin only)
+// GET /repeating-rides - List all repeating rides for this club (admin only)
 repeatingRidesRouter.get(
   "/",
-  authMiddleware,
-  requireRole("ADMIN"),
+  requireAuth,
+  requireClubRole("ADMIN"),
   async (c) => {
+    const club = c.get("club");
     try {
       const result = await db.query.repeatingRides.findMany({
+        where: eq(repeatingRides.clubId, club.id),
         orderBy: [asc(repeatingRides.name), desc(repeatingRides.distance)],
       });
 
@@ -47,17 +56,21 @@ repeatingRidesRouter.get(
   },
 );
 
-// GET /repeating-rides/:id - Get a specific repeating ride (admin only)
+// GET /repeating-rides/:id (admin only)
 repeatingRidesRouter.get(
   "/:id",
-  authMiddleware,
-  requireRole("ADMIN"),
+  requireAuth,
+  requireClubRole("ADMIN"),
   async (c) => {
+    const club = c.get("club");
     const id = c.req.param("id");
 
     try {
       const repeatingRide = await db.query.repeatingRides.findFirst({
-        where: eq(repeatingRides.id, id),
+        where: and(
+          eq(repeatingRides.id, id),
+          eq(repeatingRides.clubId, club.id),
+        ),
       });
 
       if (!repeatingRide) {
@@ -72,12 +85,14 @@ repeatingRidesRouter.get(
   },
 );
 
-// POST /repeating-rides - Create a new repeating ride (admin only)
+// POST /repeating-rides (admin only)
 repeatingRidesRouter.post(
   "/",
-  authMiddleware,
-  requireRole("ADMIN"),
+  requireAuth,
+  requireClubRole("ADMIN"),
   async (c) => {
+    const club = c.get("club");
+
     let body: unknown;
     try {
       body = await c.req.json();
@@ -99,6 +114,7 @@ repeatingRidesRouter.post(
     try {
       await db.insert(repeatingRides).values({
         id,
+        clubId: club.id,
         name: data.name,
         schedule: data.schedule,
         winterStartTime: data.winterStartTime,
@@ -120,12 +136,13 @@ repeatingRidesRouter.post(
   },
 );
 
-// PUT /repeating-rides/:id - Update a repeating ride (admin only)
+// PUT /repeating-rides/:id (admin only)
 repeatingRidesRouter.put(
   "/:id",
-  authMiddleware,
-  requireRole("ADMIN"),
+  requireAuth,
+  requireClubRole("ADMIN"),
   async (c) => {
+    const club = c.get("club");
     const id = c.req.param("id");
 
     let body: unknown;
@@ -147,7 +164,10 @@ repeatingRidesRouter.put(
 
     try {
       const existing = await db.query.repeatingRides.findFirst({
-        where: eq(repeatingRides.id, id),
+        where: and(
+          eq(repeatingRides.id, id),
+          eq(repeatingRides.clubId, club.id),
+        ),
       });
 
       if (!existing) {
@@ -170,7 +190,9 @@ repeatingRidesRouter.put(
           rideLimit: data.rideLimit ?? -1,
           updatedAt: new Date().toISOString(),
         })
-        .where(eq(repeatingRides.id, id));
+        .where(
+          and(eq(repeatingRides.id, id), eq(repeatingRides.clubId, club.id)),
+        );
 
       return c.json({ success: true, id });
     } catch (error) {
@@ -180,19 +202,22 @@ repeatingRidesRouter.put(
   },
 );
 
-// DELETE /repeating-rides/:id - Delete a repeating ride (admin only)
-// Query param: ?cascade=true to also soft-delete future rides
+// DELETE /repeating-rides/:id (admin only); ?cascade=true also soft-deletes future rides
 repeatingRidesRouter.delete(
   "/:id",
-  authMiddleware,
-  requireRole("ADMIN"),
+  requireAuth,
+  requireClubRole("ADMIN"),
   async (c) => {
+    const club = c.get("club");
     const id = c.req.param("id");
     const cascade = c.req.query("cascade") === "true";
 
     try {
       const existing = await db.query.repeatingRides.findFirst({
-        where: eq(repeatingRides.id, id),
+        where: and(
+          eq(repeatingRides.id, id),
+          eq(repeatingRides.clubId, club.id),
+        ),
       });
 
       if (!existing) {
@@ -201,18 +226,27 @@ repeatingRidesRouter.delete(
 
       let deletedRideCount = 0;
 
-      // If cascade, soft-delete all future rides with this scheduleId
       if (cascade) {
         const now = new Date().toISOString();
         const result = await db
           .update(rides)
           .set({ deleted: true })
-          .where(and(eq(rides.scheduleId, id), gt(rides.rideDate, now)))
+          .where(
+            and(
+              eq(rides.clubId, club.id),
+              eq(rides.scheduleId, id),
+              gt(rides.rideDate, now),
+            ),
+          )
           .returning({ id: rides.id });
         deletedRideCount = result.length;
       }
 
-      await db.delete(repeatingRides).where(eq(repeatingRides.id, id));
+      await db
+        .delete(repeatingRides)
+        .where(
+          and(eq(repeatingRides.id, id), eq(repeatingRides.clubId, club.id)),
+        );
 
       return c.json({ success: true, id, deletedRideCount });
     } catch (error) {

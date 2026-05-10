@@ -28,6 +28,7 @@ export const TEST_USERS = {
     id: "test-user-id",
     auth0Id: "auth0|test-user",
     role: "USER" as Role,
+    isSuperAdmin: false,
     name: "Test User",
     email: "user@test.com",
     mobile: "1234567890",
@@ -36,6 +37,7 @@ export const TEST_USERS = {
     id: "test-leader-id",
     auth0Id: "auth0|test-leader",
     role: "LEADER" as Role,
+    isSuperAdmin: false,
     name: "Test Leader",
     email: "leader@test.com",
     mobile: "0987654321",
@@ -44,10 +46,17 @@ export const TEST_USERS = {
     id: "test-admin-id",
     auth0Id: "auth0|test-admin",
     role: "ADMIN" as Role,
+    isSuperAdmin: false,
     name: "Test Admin",
     email: "admin@test.com",
     mobile: "5555555555",
   },
+};
+
+export const TEST_CLUB = {
+  id: "bcc",
+  slug: "bcc",
+  name: "Bristol Cycling Club",
 };
 
 /**

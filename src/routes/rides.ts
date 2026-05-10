@@ -9,13 +9,19 @@ import {
   cacheInvalidate,
   cacheInvalidatePattern,
   cacheSet,
+  clubCachePattern,
 } from "../lib/cache.js";
 import {
-  authMiddleware,
+  getAuthUser,
   optionalAuth,
-  requireRole,
+  requireAuth,
   type AuthUser,
 } from "../middleware/auth.js";
+import {
+  requireClubRole,
+  resolveClub,
+  type ClubContext,
+} from "../middleware/club.js";
 
 // Validation schemas
 const createRideSchema = z.object({
@@ -34,10 +40,16 @@ const createRideSchema = z.object({
 
 const updateRideSchema = createRideSchema.partial();
 
-export const ridesRouter = new Hono<{ Variables: { user?: AuthUser } }>();
+interface Vars { user?: AuthUser; club: ClubContext }
+
+export const ridesRouter = new Hono<{ Variables: Vars }>();
+
+// Apply optional auth + club resolution to every route in this router
+ridesRouter.use("*", optionalAuth, resolveClub);
 
 // GET /rides?start=2024-01-01&end=2024-12-31&shortId=abc123
-ridesRouter.get("/", optionalAuth, async (c) => {
+ridesRouter.get("/", async (c) => {
+  const club = c.get("club");
   const shortId = c.req.query("shortId");
 
   // Handle short ID lookup - bypass date filtering and caching
@@ -51,7 +63,11 @@ ridesRouter.get("/", optionalAuth, async (c) => {
             orderBy: (userOnRides, { asc }) => [asc(userOnRides.createdAt)],
           },
         },
-        where: and(like(rides.id, `%${shortId}`), eq(rides.deleted, false)),
+        where: and(
+          eq(rides.clubId, club.id),
+          like(rides.id, `%${shortId}`),
+          eq(rides.deleted, false),
+        ),
       });
 
       if (!result) {
@@ -69,21 +85,18 @@ ridesRouter.get("/", optionalAuth, async (c) => {
   const start = c.req.query("start") ?? new Date().toISOString().split("T")[0];
   const end = c.req.query("end") ?? "2099-12-31";
 
-  // Build cache key
-  const cacheKey = buildCacheKey("list", {
+  const cacheKey = buildCacheKey("list", club.id, {
     date: `${start}:${end}`,
     limit: 0,
     offset: 0,
   });
 
   try {
-    // Try cache first
     const cached = await cacheGet<{ rides: unknown[] }>(cacheKey);
     if (cached) {
       return c.json(cached);
     }
 
-    // Cache miss - query database
     const result = await db.query.rides.findMany({
       columns: {
         id: true,
@@ -102,6 +115,7 @@ ridesRouter.get("/", optionalAuth, async (c) => {
         },
       },
       where: and(
+        eq(rides.clubId, club.id),
         lte(rides.rideDate, `${end}T23:59:59Z`),
         gte(rides.rideDate, `${start}T00:00:00Z`),
         eq(rides.deleted, false),
@@ -110,10 +124,7 @@ ridesRouter.get("/", optionalAuth, async (c) => {
     });
 
     const response = { rides: result };
-
-    // Store in cache
     void cacheSet(cacheKey, response);
-
     return c.json(response);
   } catch (error) {
     console.error("Error fetching rides:", error);
@@ -122,20 +133,18 @@ ridesRouter.get("/", optionalAuth, async (c) => {
 });
 
 // GET /rides/:id
-ridesRouter.get("/:id", optionalAuth, async (c) => {
+ridesRouter.get("/:id", async (c) => {
+  const club = c.get("club");
   const id = c.req.param("id");
 
-  // Build cache key
-  const cacheKey = buildCacheKey("detail", { rideId: id });
+  const cacheKey = buildCacheKey("detail", club.id, { rideId: id });
 
   try {
-    // Try cache first
     const cached = await cacheGet<{ ride: unknown }>(cacheKey);
     if (cached) {
       return c.json(cached);
     }
 
-    // Cache miss - query database
     const result = await db.query.rides.findFirst({
       with: {
         users: {
@@ -144,7 +153,11 @@ ridesRouter.get("/:id", optionalAuth, async (c) => {
           orderBy: (userOnRides, { asc }) => [asc(userOnRides.createdAt)],
         },
       },
-      where: and(eq(rides.id, id), eq(rides.deleted, false)),
+      where: and(
+        eq(rides.clubId, club.id),
+        eq(rides.id, id),
+        eq(rides.deleted, false),
+      ),
     });
 
     if (!result) {
@@ -152,10 +165,7 @@ ridesRouter.get("/:id", optionalAuth, async (c) => {
     }
 
     const response = { ride: result };
-
-    // Store in cache
     void cacheSet(cacheKey, response);
-
     return c.json(response);
   } catch (error) {
     console.error("Error fetching ride:", error);
@@ -164,9 +174,10 @@ ridesRouter.get("/:id", optionalAuth, async (c) => {
 });
 
 // POST /rides/:id/join
-ridesRouter.post("/:id/join", authMiddleware, async (c) => {
+ridesRouter.post("/:id/join", requireAuth, async (c) => {
+  const club = c.get("club");
   const rideId = c.req.param("id");
-  const user = c.get("user");
+  const user = getAuthUser(c);
 
   let body: { userId?: string } = {};
   try {
@@ -175,21 +186,27 @@ ridesRouter.post("/:id/join", authMiddleware, async (c) => {
     // No body provided, use current user
   }
 
-  // Users can join themselves, leaders can add others
   const targetUserId = body.userId ?? user.id;
   const isSelf = targetUserId === user.id;
-  const isLeaderOrAdmin = ["LEADER", "ADMIN"].includes(user.role);
+  const isLeaderOrAdmin = ["LEADER", "ADMIN"].includes(club.role);
 
   if (!isSelf && !isLeaderOrAdmin) {
     return c.json({ error: "Forbidden" }, 403);
   }
 
+  // Confirm ride belongs to this club
+  const ride = await db.query.rides.findFirst({
+    where: and(eq(rides.id, rideId), eq(rides.clubId, club.id)),
+  });
+  if (!ride) {
+    return c.json({ error: "Ride not found" }, 404);
+  }
+
   try {
     await db.insert(userOnRides).values({ rideId, userId: targetUserId });
 
-    // Invalidate caches
-    void cacheInvalidate(buildCacheKey("detail", { rideId }));
-    void cacheInvalidatePattern("rides:list:*");
+    void cacheInvalidate(buildCacheKey("detail", club.id, { rideId }));
+    void cacheInvalidatePattern(clubCachePattern(club.id));
 
     return c.json({ success: true });
   } catch (error) {
@@ -199,9 +216,10 @@ ridesRouter.post("/:id/join", authMiddleware, async (c) => {
 });
 
 // POST /rides/:id/leave
-ridesRouter.post("/:id/leave", authMiddleware, async (c) => {
+ridesRouter.post("/:id/leave", requireAuth, async (c) => {
+  const club = c.get("club");
   const rideId = c.req.param("id");
-  const user = c.get("user");
+  const user = getAuthUser(c);
 
   let body: { userId?: string } = {};
   try {
@@ -212,10 +230,17 @@ ridesRouter.post("/:id/leave", authMiddleware, async (c) => {
 
   const targetUserId = body.userId ?? user.id;
   const isSelf = targetUserId === user.id;
-  const isLeaderOrAdmin = ["LEADER", "ADMIN"].includes(user.role);
+  const isLeaderOrAdmin = ["LEADER", "ADMIN"].includes(club.role);
 
   if (!isSelf && !isLeaderOrAdmin) {
     return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const ride = await db.query.rides.findFirst({
+    where: and(eq(rides.id, rideId), eq(rides.clubId, club.id)),
+  });
+  if (!ride) {
+    return c.json({ error: "Ride not found" }, 404);
   }
 
   try {
@@ -228,9 +253,8 @@ ridesRouter.post("/:id/leave", authMiddleware, async (c) => {
         ),
       );
 
-    // Invalidate caches
-    void cacheInvalidate(buildCacheKey("detail", { rideId }));
-    void cacheInvalidatePattern("rides:list:*");
+    void cacheInvalidate(buildCacheKey("detail", club.id, { rideId }));
+    void cacheInvalidatePattern(clubCachePattern(club.id));
 
     return c.json({ success: true });
   } catch (error) {
@@ -240,9 +264,10 @@ ridesRouter.post("/:id/leave", authMiddleware, async (c) => {
 });
 
 // PATCH /rides/:id/notes - Update user's notes for a ride
-ridesRouter.patch("/:id/notes", authMiddleware, async (c) => {
+ridesRouter.patch("/:id/notes", requireAuth, async (c) => {
+  const club = c.get("club");
   const rideId = c.req.param("id");
-  const user = c.get("user");
+  const user = getAuthUser(c);
 
   let body: { notes?: string; userId?: string };
   try {
@@ -253,11 +278,17 @@ ridesRouter.patch("/:id/notes", authMiddleware, async (c) => {
 
   const targetUserId = body.userId ?? user.id;
   const isSelf = targetUserId === user.id;
-  const isLeaderOrAdmin = ["LEADER", "ADMIN"].includes(user.role);
+  const isLeaderOrAdmin = ["LEADER", "ADMIN"].includes(club.role);
 
-  // Users can update their own notes, leaders/admins can update others
   if (!isSelf && !isLeaderOrAdmin) {
     return c.json({ error: "Forbidden" }, 403);
+  }
+
+  const ride = await db.query.rides.findFirst({
+    where: and(eq(rides.id, rideId), eq(rides.clubId, club.id)),
+  });
+  if (!ride) {
+    return c.json({ error: "Ride not found" }, 404);
   }
 
   try {
@@ -271,8 +302,7 @@ ridesRouter.patch("/:id/notes", authMiddleware, async (c) => {
         ),
       );
 
-    // Invalidate cache for ride detail (notes are included there)
-    void cacheInvalidate(buildCacheKey("detail", { rideId }));
+    void cacheInvalidate(buildCacheKey("detail", club.id, { rideId }));
 
     return c.json({ success: true });
   } catch (error) {
@@ -284,9 +314,11 @@ ridesRouter.patch("/:id/notes", authMiddleware, async (c) => {
 // POST /rides - Create a new ride (LEADER/ADMIN only)
 ridesRouter.post(
   "/",
-  authMiddleware,
-  requireRole("LEADER", "ADMIN"),
+  requireAuth,
+  requireClubRole("LEADER", "ADMIN"),
   async (c) => {
+    const club = c.get("club");
+
     let body: unknown;
     try {
       body = await c.req.json();
@@ -308,6 +340,7 @@ ridesRouter.post(
     try {
       await db.insert(rides).values({
         id,
+        clubId: club.id,
         name: data.name,
         rideDate: data.rideDate,
         distance: data.distance,
@@ -321,8 +354,7 @@ ridesRouter.post(
         scheduleId: data.scheduleId ?? null,
       });
 
-      // Invalidate all ride caches
-      void cacheInvalidatePattern("rides:*");
+      void cacheInvalidatePattern(clubCachePattern(club.id));
 
       return c.json({ success: true, id }, 201);
     } catch (error) {
@@ -335,9 +367,10 @@ ridesRouter.post(
 // PUT /rides/:id - Update a ride (LEADER/ADMIN only)
 ridesRouter.put(
   "/:id",
-  authMiddleware,
-  requireRole("LEADER", "ADMIN"),
+  requireAuth,
+  requireClubRole("LEADER", "ADMIN"),
   async (c) => {
+    const club = c.get("club");
     const id = c.req.param("id");
 
     let body: unknown;
@@ -355,9 +388,12 @@ ridesRouter.put(
       );
     }
 
-    // Check ride exists
     const existing = await db.query.rides.findFirst({
-      where: and(eq(rides.id, id), eq(rides.deleted, false)),
+      where: and(
+        eq(rides.id, id),
+        eq(rides.clubId, club.id),
+        eq(rides.deleted, false),
+      ),
     });
 
     if (!existing) {
@@ -366,7 +402,6 @@ ridesRouter.put(
 
     const data = result.data;
 
-    // Build update object, only including provided fields
     const updateData: Record<string, unknown> = {
       updatedAt: new Date().toISOString(),
     };
@@ -387,11 +422,13 @@ ridesRouter.put(
       updateData.scheduleId = data.scheduleId || null;
 
     try {
-      await db.update(rides).set(updateData).where(eq(rides.id, id));
+      await db
+        .update(rides)
+        .set(updateData)
+        .where(and(eq(rides.id, id), eq(rides.clubId, club.id)));
 
-      // Invalidate caches
-      void cacheInvalidate(buildCacheKey("detail", { rideId: id }));
-      void cacheInvalidatePattern("rides:list:*");
+      void cacheInvalidate(buildCacheKey("detail", club.id, { rideId: id }));
+      void cacheInvalidatePattern(clubCachePattern(club.id));
 
       return c.json({ success: true, id });
     } catch (error) {
@@ -404,14 +441,18 @@ ridesRouter.put(
 // DELETE /rides/:id - Soft delete a ride (LEADER/ADMIN only)
 ridesRouter.delete(
   "/:id",
-  authMiddleware,
-  requireRole("LEADER", "ADMIN"),
+  requireAuth,
+  requireClubRole("LEADER", "ADMIN"),
   async (c) => {
+    const club = c.get("club");
     const id = c.req.param("id");
 
-    // Check ride exists
     const existing = await db.query.rides.findFirst({
-      where: and(eq(rides.id, id), eq(rides.deleted, false)),
+      where: and(
+        eq(rides.id, id),
+        eq(rides.clubId, club.id),
+        eq(rides.deleted, false),
+      ),
     });
 
     if (!existing) {
@@ -422,11 +463,10 @@ ridesRouter.delete(
       await db
         .update(rides)
         .set({ deleted: true, updatedAt: new Date().toISOString() })
-        .where(eq(rides.id, id));
+        .where(and(eq(rides.id, id), eq(rides.clubId, club.id)));
 
-      // Invalidate caches
-      void cacheInvalidate(buildCacheKey("detail", { rideId: id }));
-      void cacheInvalidatePattern("rides:list:*");
+      void cacheInvalidate(buildCacheKey("detail", club.id, { rideId: id }));
+      void cacheInvalidatePattern(clubCachePattern(club.id));
 
       return c.json({ success: true });
     } catch (error) {
@@ -439,14 +479,18 @@ ridesRouter.delete(
 // POST /rides/:id/cancel - Cancel a ride (LEADER/ADMIN only)
 ridesRouter.post(
   "/:id/cancel",
-  authMiddleware,
-  requireRole("LEADER", "ADMIN"),
+  requireAuth,
+  requireClubRole("LEADER", "ADMIN"),
   async (c) => {
+    const club = c.get("club");
     const id = c.req.param("id");
 
-    // Check ride exists
     const existing = await db.query.rides.findFirst({
-      where: and(eq(rides.id, id), eq(rides.deleted, false)),
+      where: and(
+        eq(rides.id, id),
+        eq(rides.clubId, club.id),
+        eq(rides.deleted, false),
+      ),
     });
 
     if (!existing) {
@@ -457,11 +501,10 @@ ridesRouter.post(
       await db
         .update(rides)
         .set({ cancelled: true, updatedAt: new Date().toISOString() })
-        .where(eq(rides.id, id));
+        .where(and(eq(rides.id, id), eq(rides.clubId, club.id)));
 
-      // Invalidate caches
-      void cacheInvalidate(buildCacheKey("detail", { rideId: id }));
-      void cacheInvalidatePattern("rides:list:*");
+      void cacheInvalidate(buildCacheKey("detail", club.id, { rideId: id }));
+      void cacheInvalidatePattern(clubCachePattern(club.id));
 
       return c.json({ success: true });
     } catch (error) {
@@ -474,14 +517,18 @@ ridesRouter.post(
 // POST /rides/:id/uncancel - Uncancel a ride (LEADER/ADMIN only)
 ridesRouter.post(
   "/:id/uncancel",
-  authMiddleware,
-  requireRole("LEADER", "ADMIN"),
+  requireAuth,
+  requireClubRole("LEADER", "ADMIN"),
   async (c) => {
+    const club = c.get("club");
     const id = c.req.param("id");
 
-    // Check ride exists
     const existing = await db.query.rides.findFirst({
-      where: and(eq(rides.id, id), eq(rides.deleted, false)),
+      where: and(
+        eq(rides.id, id),
+        eq(rides.clubId, club.id),
+        eq(rides.deleted, false),
+      ),
     });
 
     if (!existing) {
@@ -492,11 +539,10 @@ ridesRouter.post(
       await db
         .update(rides)
         .set({ cancelled: false, updatedAt: new Date().toISOString() })
-        .where(eq(rides.id, id));
+        .where(and(eq(rides.id, id), eq(rides.clubId, club.id)));
 
-      // Invalidate caches
-      void cacheInvalidate(buildCacheKey("detail", { rideId: id }));
-      void cacheInvalidatePattern("rides:list:*");
+      void cacheInvalidate(buildCacheKey("detail", club.id, { rideId: id }));
+      void cacheInvalidatePattern(clubCachePattern(club.id));
 
       return c.json({ success: true });
     } catch (error) {

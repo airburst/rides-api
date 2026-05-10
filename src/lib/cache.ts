@@ -115,16 +115,21 @@ export async function cacheInvalidatePattern(pattern: string): Promise<void> {
 
 export function buildCacheKey(
   type: "list" | "detail",
+  clubId: string,
   params: Record<string, string | number | undefined>,
 ): string {
   if (type === "list") {
     const { date = "all", limit = "50", offset = "0" } = params;
-    return `rides:list:${date}:${limit}:${offset}`;
+    return `rides:${clubId}:list:${date}:${limit}:${offset}`;
   }
 
   // type === "detail"
   const { rideId } = params;
-  return `rides:detail:${String(rideId)}`;
+  return `rides:${clubId}:detail:${String(rideId)}`;
+}
+
+export function clubCachePattern(clubId: string): string {
+  return `rides:${clubId}:*`;
 }
 
 export async function closeRedisConnection(): Promise<void> {
