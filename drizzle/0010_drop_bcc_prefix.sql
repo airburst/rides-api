@@ -24,4 +24,9 @@ ALTER TABLE "rides" RENAME CONSTRAINT "bcc_rides_pkey" TO "rides_pkey";--> state
 ALTER TABLE "repeating_rides" RENAME CONSTRAINT "bcc_repeating_rides_pkey" TO "repeating_rides_pkey";--> statement-breakpoint
 ALTER TABLE "archived_rides" RENAME CONSTRAINT "bcc_archived_rides_pkey" TO "archived_rides_pkey";--> statement-breakpoint
 ALTER TABLE "sessions" RENAME CONSTRAINT "bcc_sessions_pkey" TO "sessions_pkey";--> statement-breakpoint
-ALTER TABLE "memberships" RENAME CONSTRAINT "bcc_membership_pkey" TO "memberships_pkey";
+ALTER TABLE "memberships" RENAME CONSTRAINT "bcc_membership_pkey" TO "memberships_pkey";--> statement-breakpoint
+ALTER TABLE IF EXISTS "bcc_routes" RENAME TO "routes";--> statement-breakpoint
+ALTER TABLE IF EXISTS "routes" RENAME CONSTRAINT "bcc_routes_pkey" TO "routes_pkey";--> statement-breakpoint
+ALTER INDEX IF EXISTS "bcc_archived_users_on_rides_ride_id_created_at_idx" RENAME TO "archived_users_on_rides_ride_id_created_at_idx";--> statement-breakpoint
+ALTER INDEX IF EXISTS "bcc_rides_ride_date_deleted_idx" RENAME TO "rides_ride_date_deleted_idx";--> statement-breakpoint
+ALTER INDEX IF EXISTS "bcc_rides_schedule_id_deleted_idx" RENAME TO "rides_schedule_id_deleted_idx";
