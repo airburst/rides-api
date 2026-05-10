@@ -12,6 +12,26 @@ export type Role = (typeof roleEnum.enumValues)[number];
 
 // ============ TABLES ============
 
+export const clubs = createTable(
+  "clubs",
+  {
+    id: t.text().primaryKey(),
+    slug: t.varchar({ length: 30 }).notNull(),
+    name: t.varchar({ length: 255 }).notNull(),
+    settings: t.jsonb().default({}).notNull(),
+    allowedOrigins: t.jsonb().default([]).notNull(),
+    createdAt: t
+      .timestamp({ precision: 3, mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: t
+      .timestamp({ precision: 3, mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [t.uniqueIndex("clubs_slug_unique").on(table.slug)],
+);
+
 export const users = createTable(
   "users",
   {
@@ -24,6 +44,7 @@ export const users = createTable(
     mobile: t.varchar({ length: 255 }),
     emergency: t.varchar({ length: 255 }),
     role: roleEnum().default("USER"),
+    isSuperAdmin: t.boolean().notNull().default(false),
     preferences: t.json().default({ units: "km" }),
     membershipId: t.text(),
     membershipStatus: t.varchar({ length: 255 }).default("NOT_MEMBER"),
@@ -39,6 +60,49 @@ export const users = createTable(
   (table) => [
     t.index("idx_users_name_lower").on(sql`lower(${table.name})`),
     t.index("idx_users_email_lower").on(sql`lower(${table.email})`),
+  ],
+);
+
+export const userClubs = createTable(
+  "user_clubs",
+  {
+    userId: t
+      .varchar({ length: 255 })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    clubId: t
+      .text()
+      .notNull()
+      .references(() => clubs.id, { onDelete: "cascade" }),
+    role: roleEnum().notNull().default("USER"),
+    joinedAt: t
+      .timestamp({ precision: 3, mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    t.primaryKey({ columns: [table.userId, table.clubId] }),
+    t.index("idx_user_clubs_club_id").on(table.clubId),
+  ],
+);
+
+export const clubApiKeys = createTable(
+  "club_api_keys",
+  {
+    id: t.text().primaryKey(),
+    clubId: t
+      .text()
+      .references(() => clubs.id, { onDelete: "cascade" }),
+    hashedKey: t.text().notNull(),
+    label: t.varchar({ length: 255 }),
+    lastUsedAt: t.timestamp({ precision: 3, mode: "string" }),
+    createdAt: t
+      .timestamp({ precision: 3, mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    t.uniqueIndex("club_api_keys_hashed_key_unique").on(table.hashedKey),
   ],
 );
 
@@ -71,6 +135,7 @@ export const rides = createTable(
   "rides",
   {
     id: t.text().primaryKey(),
+    clubId: t.text().references(() => clubs.id),
     name: t.varchar({ length: 255 }).notNull(),
     rideGroup: t.varchar({ length: 255 }),
     rideDate: t
@@ -99,6 +164,9 @@ export const rides = createTable(
     t.index().on(table.name),
     t.index("idx_rides_date_deleted").on(table.rideDate, table.deleted),
     t.index("idx_rides_schedule_date").on(table.scheduleId, table.rideDate),
+    t
+      .index("idx_rides_club_deleted_date")
+      .on(table.clubId, table.deleted, table.rideDate),
   ],
 );
 
@@ -132,14 +200,27 @@ export const userOnRides = createTable(
 export const userRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
   rides: many(userOnRides),
+  clubs: many(userClubs),
 }));
 
 export const accountRelations = relations(accounts, ({ one }) => ({
   users: one(users, { fields: [accounts.userId], references: [users.id] }),
 }));
 
-export const rideRelations = relations(rides, ({ many }) => ({
+export const clubRelations = relations(clubs, ({ many }) => ({
+  members: many(userClubs),
+  rides: many(rides),
+  repeatingRides: many(repeatingRides),
+}));
+
+export const userClubRelations = relations(userClubs, ({ one }) => ({
+  user: one(users, { fields: [userClubs.userId], references: [users.id] }),
+  club: one(clubs, { fields: [userClubs.clubId], references: [clubs.id] }),
+}));
+
+export const rideRelations = relations(rides, ({ one, many }) => ({
   users: many(userOnRides),
+  club: one(clubs, { fields: [rides.clubId], references: [clubs.id] }),
 }));
 
 export const userOnRidesRelations = relations(userOnRides, ({ one }) => ({
@@ -152,6 +233,7 @@ export const repeatingRides = createTable(
   "repeating_rides",
   {
     id: t.text().primaryKey(),
+    clubId: t.text().references(() => clubs.id),
     name: t.varchar({ length: 255 }).notNull(),
     schedule: t.text().notNull(),
     winterStartTime: t.varchar({ length: 255 }),
@@ -172,7 +254,10 @@ export const repeatingRides = createTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => [t.index().on(table.name)],
+  (table) => [
+    t.index().on(table.name),
+    t.index("idx_repeating_rides_club_id").on(table.clubId),
+  ],
 );
 
 export const repeatingRideRelations = relations(repeatingRides, ({ many }) => ({
@@ -184,6 +269,7 @@ export const archivedRides = createTable(
   "archived_rides",
   {
     id: t.text().primaryKey(),
+    clubId: t.text().references(() => clubs.id),
     name: t.varchar({ length: 255 }).notNull(),
     rideGroup: t.varchar({ length: 255 }),
     rideDate: t
@@ -203,7 +289,10 @@ export const archivedRides = createTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => [t.index().on(table.name)],
+  (table) => [
+    t.index().on(table.name),
+    t.index("idx_archived_rides_club_id").on(table.clubId),
+  ],
 );
 
 export const archivedUserOnRides = createTable(
@@ -220,20 +309,25 @@ export const archivedUserOnRides = createTable(
   (table) => [t.primaryKey({ columns: [table.userId, table.rideId] })],
 );
 
-// Memberships (from RiderHQ)
-export const memberships = createTable("memberships", {
-  system: t.text().notNull().default("RiderHQ"),
-  memberId: t.text().primaryKey().notNull(),
-  userId: t.text().notNull(),
-  handle: t.text().notNull(),
-  isUser: t.boolean().notNull(),
-  firstnames: t.text().notNull(),
-  lastname: t.text().notNull(),
-  email: t.text().notNull(),
-  expires: t.text(),
-  isVerified: t.boolean(),
-  isGuest: t.boolean(),
-});
+// Memberships (from RiderHQ — currently BCC-only)
+export const memberships = createTable(
+  "memberships",
+  {
+    system: t.text().notNull().default("RiderHQ"),
+    memberId: t.text().primaryKey().notNull(),
+    clubId: t.text().references(() => clubs.id),
+    userId: t.text().notNull(),
+    handle: t.text().notNull(),
+    isUser: t.boolean().notNull(),
+    firstnames: t.text().notNull(),
+    lastname: t.text().notNull(),
+    email: t.text().notNull(),
+    expires: t.text(),
+    isVerified: t.boolean(),
+    isGuest: t.boolean(),
+  },
+  (table) => [t.index("idx_memberships_club_id").on(table.clubId)],
+);
 
 // Sessions (NextAuth - legacy, kept for DB compatibility)
 export const sessions = createTable(

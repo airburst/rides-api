@@ -78,6 +78,20 @@
       "when": 1778889600000,
       "tag": "0010_drop_bcc_prefix",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1778430977610,
+      "tag": "0011_add_multitenant_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1778430977611,
+      "tag": "0012_backfill_bcc_club",
+      "breakpoints": true
     }
   ]
 }
