@@ -2,8 +2,7 @@ import { relations, sql } from "drizzle-orm";
 import * as t from "drizzle-orm/pg-core";
 import { pgTableCreator } from "drizzle-orm/pg-core";
 
-// Table prefix
-const createTable = pgTableCreator((name) => `bcc_${name}`);
+const createTable = pgTableCreator((name) => name);
 
 // Enums
 export const roleEnum = t.pgEnum("role", ["USER", "LEADER", "ADMIN"]);
@@ -222,7 +221,7 @@ export const archivedUserOnRides = createTable(
 );
 
 // Memberships (from RiderHQ)
-export const memberships = createTable("membership", {
+export const memberships = createTable("memberships", {
   system: t.text().notNull().default("RiderHQ"),
   memberId: t.text().primaryKey().notNull(),
   userId: t.text().notNull(),

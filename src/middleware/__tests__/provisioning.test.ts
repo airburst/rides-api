@@ -2,7 +2,7 @@
  * JIT User Provisioning Tests
  *
  * Tests that new Auth0 users are automatically provisioned
- * with bcc_users + bcc_accounts rows on first authenticated request.
+ * with users + accounts rows on first authenticated request.
  */
 
 import { beforeEach, describe, expect, mock, test } from "bun:test";

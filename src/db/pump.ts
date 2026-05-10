@@ -42,7 +42,7 @@ const main = async () => {
     id, name, email, image, mobile, emergency, role, preferences,
     membership_id as "membershipId",
     membership_status as "membershipStatus"
-  from "bcc_users"`);
+  from "users"`);
   // @ts-expect-error - data typing
   await db.insert(schema.users).values(usersData);
   console.info("Users migrated", usersData.length);
@@ -53,7 +53,7 @@ const main = async () => {
     provider_account_id as "providerAccountId",
     refresh_token, access_token, expires_at, token_type,
     scope, id_token, session_state
-  from "bcc_accounts"`);
+  from "accounts"`);
   // @ts-expect-error - data typing
   await db.insert(schema.accounts).values(accountsData);
   console.info("Accounts migrated", accountsData.length);
@@ -61,7 +61,7 @@ const main = async () => {
   // Sessions
   const sessionsData = await sourceDb.execute(sql`select
     user_id as "userId", session_token as "sessionToken", expires
-  from "bcc_sessions" where expires > NOW()`);
+  from "sessions" where expires > NOW()`);
   sessionsData.forEach((session) => {
     // @ts-expect-error - data typing
     session.expires = new Date(session.expires);
@@ -79,7 +79,7 @@ const main = async () => {
     leader, notes, ride_limit as "rideLimit", deleted, cancelled,
     schedule_id as "scheduleId", created_at as "createdAt",
     updated_at as "updatedAt"
-  from "bcc_rides"`);
+  from "rides"`);
   // @ts-expect-error - data typing
   await db.insert(schema.rides).values(ridesData);
   console.info("Rides migrated", ridesData.length);
@@ -88,7 +88,7 @@ const main = async () => {
   const uorData = await sourceDb.execute(sql`SELECT
     user_id as "userId", ride_id as "rideId", notes,
     created_at as "createdAt"
-  from "bcc_users_on_rides"`);
+  from "users_on_rides"`);
   // @ts-expect-error - data typing
   await db.insert(schema.userOnRides).values(uorData);
   console.info("Users on rides migrated", uorData.length);
@@ -99,7 +99,7 @@ const main = async () => {
     ride_group as "rideGroup", destination, distance,
     meet_point as "meetPoint", route, leader, notes,
     ride_limit as "rideLimit", created_at as "createdAt"
-  from "bcc_repeating_rides"`);
+  from "repeating_rides"`);
   // @ts-expect-error - data typing
   await db.insert(schema.repeatingRides).values(repeatingRidesData);
   console.info("Repeating rides migrated", repeatingRidesData.length);
@@ -110,7 +110,7 @@ const main = async () => {
     destination, distance, meet_point as "meetPoint", route,
     leader, notes, ride_limit as "rideLimit", deleted, cancelled,
     created_at as "createdAt"
-  from "bcc_archived_rides"`);
+  from "archived_rides"`);
   if (archivedRidesData.length > 0) {
     // @ts-expect-error - data typing
     await db.insert(schema.archivedRides).values(archivedRidesData);
@@ -121,7 +121,7 @@ const main = async () => {
   const archivedUorData = await sourceDb.execute(sql`SELECT
     user_id as "userId", ride_id as "rideId", notes,
     created_at as "createdAt"
-  from "bcc_archived_users_on_rides"`);
+  from "archived_users_on_rides"`);
   if (archivedUorData.length > 0) {
     // @ts-expect-error - data typing
     await db.insert(schema.archivedUserOnRides).values(archivedUorData);
