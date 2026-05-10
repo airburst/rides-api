@@ -4,7 +4,7 @@ import { join } from "node:path";
 import sharp from "sharp";
 import { z } from "zod";
 import { db } from "../db/index.js";
-import { userClubs, users } from "../db/schema/index.js";
+import { clubs, userClubs, users } from "../db/schema/index.js";
 import {
   authMiddleware,
   getAuthUser,
@@ -35,6 +35,9 @@ const updateUserSchema = z.object({
 });
 
 // GET /users/me - current user + per-club memberships. Does not require a club context.
+// Includes a top-level `role` compat field derived from the active club (X-Club-Id
+// header / ?club= / DEFAULT_CLUB_SLUG fallback) so the legacy single-club frontend
+// keeps working. Remove once frontend reads from `user.clubs[]`.
 usersRouter.get("/me", authMiddleware, async (c) => {
   const authUser = c.get("user");
 
@@ -52,7 +55,27 @@ usersRouter.get("/me", authMiddleware, async (c) => {
       .from(userClubs)
       .where(eq(userClubs.userId, authUser.id));
 
-    return c.json({ user: { ...user, clubs: memberships } });
+    // Resolve active club for compat role. Fall back to default club.
+    const identifier =
+      c.req.header("X-Club-Id") ??
+      c.req.query("club") ??
+      process.env.DEFAULT_CLUB_SLUG ??
+      "bcc";
+    const activeClub = await db.query.clubs.findFirst({
+      where: or(eq(clubs.slug, identifier), eq(clubs.id, identifier)),
+    });
+
+    const activeMembership = activeClub
+      ? memberships.find((m) => m.clubId === activeClub.id)
+      : undefined;
+
+    const compatRole = authUser.isSuperAdmin
+      ? "ADMIN"
+      : (activeMembership?.role ?? "USER");
+
+    return c.json({
+      user: { ...user, role: compatRole, clubs: memberships },
+    });
   } catch (error) {
     console.error("Error fetching user:", error);
     return c.json({ error: "Failed to fetch user" }, 500);
