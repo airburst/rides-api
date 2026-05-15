@@ -113,6 +113,13 @@
       "when": 1778862846218,
       "tag": "0015_dashing_proudstar",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1778863200000,
+      "tag": "0016_repair_club_id_uuid_conversion",
+      "breakpoints": true
     }
   ]
 }

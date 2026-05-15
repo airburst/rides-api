@@ -18,9 +18,16 @@ import {
   type ClubContext,
 } from "../middleware/club.js";
 
-interface Vars { user?: AuthUser; club: ClubContext }
+interface Vars {
+  user?: AuthUser;
+  club: ClubContext;
+}
 
 export const usersRouter = new Hono<{ Variables: Vars }>();
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const isUuid = (value: string) => UUID_REGEX.test(value);
 
 // Validation schema for user updates
 const updateUserSchema = z.object({
@@ -62,7 +69,9 @@ usersRouter.get("/me", authMiddleware, async (c) => {
       process.env.DEFAULT_CLUB_SLUG ??
       "bcc";
     const activeClub = await db.query.clubs.findFirst({
-      where: or(eq(clubs.slug, identifier), eq(clubs.id, identifier)),
+      where: isUuid(identifier)
+        ? or(eq(clubs.slug, identifier), eq(clubs.id, identifier))
+        : eq(clubs.slug, identifier),
     });
 
     const activeMembership = activeClub
@@ -240,9 +249,7 @@ usersRouter.patch("/:id", requireAuth, async (c) => {
       await db
         .update(userClubs)
         .set({ role: data.role })
-        .where(
-          and(eq(userClubs.userId, id), eq(userClubs.clubId, club.id)),
-        );
+        .where(and(eq(userClubs.userId, id), eq(userClubs.clubId, club.id)));
     }
 
     return c.json({ success: true, id });

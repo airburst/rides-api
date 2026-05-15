@@ -9,14 +9,50 @@ ALTER TABLE "rides" DROP CONSTRAINT "rides_club_id_clubs_id_fk";--> statement-br
 -- Drop slug unique index
 DROP INDEX "clubs_slug_unique";--> statement-breakpoint
 
--- Backfill existing club record with a valid UUID
-UPDATE "club_api_keys" SET "club_id" = '5cfb9e03-db2d-4371-b795-8402879f01f9' WHERE "club_id" = 'bcc';--> statement-breakpoint
-UPDATE "user_clubs" SET "club_id" = '5cfb9e03-db2d-4371-b795-8402879f01f9' WHERE "club_id" = 'bcc';--> statement-breakpoint
-UPDATE "archived_rides" SET "club_id" = '5cfb9e03-db2d-4371-b795-8402879f01f9' WHERE "club_id" = 'bcc';--> statement-breakpoint
-UPDATE "memberships" SET "club_id" = '5cfb9e03-db2d-4371-b795-8402879f01f9' WHERE "club_id" = 'bcc';--> statement-breakpoint
-UPDATE "repeating_rides" SET "club_id" = '5cfb9e03-db2d-4371-b795-8402879f01f9' WHERE "club_id" = 'bcc';--> statement-breakpoint
-UPDATE "rides" SET "club_id" = '5cfb9e03-db2d-4371-b795-8402879f01f9' WHERE "club_id" = 'bcc';--> statement-breakpoint
-UPDATE "clubs" SET "id" = '5cfb9e03-db2d-4371-b795-8402879f01f9' WHERE "id" = 'bcc';--> statement-breakpoint
+-- Map every existing text club id to a generated UUID before casting.
+CREATE TEMP TABLE "_club_id_map" (
+	"old_id" text PRIMARY KEY,
+	"new_id" uuid NOT NULL
+);--> statement-breakpoint
+
+INSERT INTO "_club_id_map" ("old_id", "new_id")
+SELECT "id", gen_random_uuid()
+FROM "clubs";--> statement-breakpoint
+
+UPDATE "club_api_keys" cak
+SET "club_id" = m."new_id"::text
+FROM "_club_id_map" m
+WHERE cak."club_id" = m."old_id";--> statement-breakpoint
+
+UPDATE "user_clubs" uc
+SET "club_id" = m."new_id"::text
+FROM "_club_id_map" m
+WHERE uc."club_id" = m."old_id";--> statement-breakpoint
+
+UPDATE "archived_rides" ar
+SET "club_id" = m."new_id"::text
+FROM "_club_id_map" m
+WHERE ar."club_id" = m."old_id";--> statement-breakpoint
+
+UPDATE "memberships" mbr
+SET "club_id" = m."new_id"::text
+FROM "_club_id_map" m
+WHERE mbr."club_id" = m."old_id";--> statement-breakpoint
+
+UPDATE "repeating_rides" rr
+SET "club_id" = m."new_id"::text
+FROM "_club_id_map" m
+WHERE rr."club_id" = m."old_id";--> statement-breakpoint
+
+UPDATE "rides" r
+SET "club_id" = m."new_id"::text
+FROM "_club_id_map" m
+WHERE r."club_id" = m."old_id";--> statement-breakpoint
+
+UPDATE "clubs" c
+SET "id" = m."new_id"::text
+FROM "_club_id_map" m
+WHERE c."id" = m."old_id";--> statement-breakpoint
 
 -- Change clubs.id to uuid
 ALTER TABLE "clubs" ALTER COLUMN "id" SET DATA TYPE uuid USING id::uuid;--> statement-breakpoint
@@ -37,3 +73,5 @@ ALTER TABLE "archived_rides" ADD CONSTRAINT "archived_rides_club_id_clubs_id_fk"
 ALTER TABLE "memberships" ADD CONSTRAINT "memberships_club_id_clubs_id_fk" FOREIGN KEY ("club_id") REFERENCES "public"."clubs"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "repeating_rides" ADD CONSTRAINT "repeating_rides_club_id_clubs_id_fk" FOREIGN KEY ("club_id") REFERENCES "public"."clubs"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "rides" ADD CONSTRAINT "rides_club_id_clubs_id_fk" FOREIGN KEY ("club_id") REFERENCES "public"."clubs"("id") ON DELETE no action ON UPDATE no action;
+
+DROP TABLE "_club_id_map";

@@ -11,8 +11,11 @@ export interface ClubContext {
 }
 
 const DEFAULT_CLUB_SLUG = process.env.DEFAULT_CLUB_SLUG ?? "bcc";
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const isStrictTenancy = () => process.env.STRICT_TENANCY === "true";
+const isUuid = (value: string) => UUID_REGEX.test(value);
 
 async function findClubById(id: string) {
   return db.query.clubs.findFirst({ where: eq(clubs.id, id) });
@@ -37,9 +40,14 @@ export const resolveClub = createMiddleware<{
     }
   }
 
-  const club = clubId
-    ? (await findClubById(clubId)) ?? (await findClubBySlug(clubId))
-    : await findClubBySlug(clubSlug ?? DEFAULT_CLUB_SLUG);
+  let club;
+  if (clubId) {
+    club = isUuid(clubId) ? await findClubById(clubId) : null;
+    club ??= await findClubBySlug(clubId);
+  } else {
+    club = await findClubBySlug(clubSlug ?? DEFAULT_CLUB_SLUG);
+  }
+
   if (!club) {
     return c.json({ error: "Club not found" }, 404);
   }
