@@ -14,30 +14,32 @@ const DEFAULT_CLUB_SLUG = process.env.DEFAULT_CLUB_SLUG ?? "bcc";
 
 const isStrictTenancy = () => process.env.STRICT_TENANCY === "true";
 
-async function findClub(identifier: string) {
-  const bySlug = await db.query.clubs.findFirst({
-    where: eq(clubs.slug, identifier),
-  });
-  if (bySlug) return bySlug;
-  return db.query.clubs.findFirst({ where: eq(clubs.id, identifier) });
+async function findClubById(id: string) {
+  return db.query.clubs.findFirst({ where: eq(clubs.id, id) });
+}
+
+async function findClubBySlug(slug: string) {
+  return db.query.clubs.findFirst({ where: eq(clubs.slug, slug) });
 }
 
 export const resolveClub = createMiddleware<{
   Variables: { user?: AuthUser; club: ClubContext };
 }>(async (c, next) => {
-  let identifier = c.req.header("X-Club-Id") ?? c.req.query("club");
+  const clubId = c.req.header("X-Club-Id");
+  const clubSlug = c.req.query("club");
 
-  if (!identifier) {
+  if (!clubId && !clubSlug) {
     if (isStrictTenancy()) {
       return c.json(
         { error: "Missing X-Club-Id header or ?club= query param" },
         400,
       );
     }
-    identifier = DEFAULT_CLUB_SLUG;
   }
 
-  const club = await findClub(identifier);
+  const club = clubId
+    ? await findClubById(clubId)
+    : await findClubBySlug(clubSlug ?? DEFAULT_CLUB_SLUG);
   if (!club) {
     return c.json({ error: "Club not found" }, 404);
   }
