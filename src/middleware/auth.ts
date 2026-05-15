@@ -60,9 +60,9 @@ export const authMiddleware = createMiddleware<{
 }>(async (c, next) => {
   // dev-only auth bypass — refuses to operate in production
   if (process.env.DEV_SKIP_AUTH === "true") {
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV !== "development") {
       return c.json(
-        { error: "DEV_SKIP_AUTH must never be set in production" },
+        { error: "DEV_SKIP_AUTH is only allowed when NODE_ENV=development" },
         500,
       );
     }
@@ -82,6 +82,7 @@ export const authMiddleware = createMiddleware<{
         500,
       );
     }
+    // auth0Id sentinel: never a real Auth0 sub (those have form "auth0|...")
     c.set("user", {
       id: user.id,
       auth0Id: "dev-skip-auth",
@@ -127,9 +128,9 @@ export const optionalAuth = createMiddleware<{
 }>(async (c, next) => {
   // dev-only auth bypass — refuses to operate in production
   if (process.env.DEV_SKIP_AUTH === "true") {
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV !== "development") {
       return c.json(
-        { error: "DEV_SKIP_AUTH must never be set in production" },
+        { error: "DEV_SKIP_AUTH is only allowed when NODE_ENV=development" },
         500,
       );
     }
@@ -149,6 +150,7 @@ export const optionalAuth = createMiddleware<{
         500,
       );
     }
+    // auth0Id sentinel: never a real Auth0 sub (those have form "auth0|...")
     c.set("user", {
       id: user.id,
       auth0Id: "dev-skip-auth",

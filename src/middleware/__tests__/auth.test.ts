@@ -62,10 +62,24 @@ describe("authMiddleware with DEV_SKIP_AUTH", () => {
     expect(body.isSuperAdmin).toBe(true);
   });
 
-  test("refuses to start when flag is on in production", async () => {
+  test("refuses to operate when NODE_ENV is not development (production)", async () => {
     process.env.DEV_SKIP_AUTH = "true";
     process.env.DEV_SKIP_AUTH_USER = "dev@local";
     process.env.NODE_ENV = "production";
+
+    const { authMiddleware } = await import("../auth.js");
+    const app = new Hono();
+    app.use("*", authMiddleware);
+    app.get("/who", (c) => c.json({}));
+
+    const res = await app.request("/who");
+    expect(res.status).toBe(500);
+  });
+
+  test("refuses to operate when NODE_ENV is not development (staging)", async () => {
+    process.env.DEV_SKIP_AUTH = "true";
+    process.env.DEV_SKIP_AUTH_USER = "dev@local";
+    process.env.NODE_ENV = "staging";
 
     const { authMiddleware } = await import("../auth.js");
     const app = new Hono();
