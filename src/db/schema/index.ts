@@ -15,7 +15,7 @@ export type Role = (typeof roleEnum.enumValues)[number];
 export const clubs = createTable(
   "clubs",
   {
-    id: t.text().primaryKey(),
+    id: t.uuid().primaryKey().defaultRandom(),
     slug: t.varchar({ length: 30 }).notNull(),
     name: t.varchar({ length: 255 }).notNull(),
     settings: t.jsonb().default({}).notNull(),
@@ -29,7 +29,7 @@ export const clubs = createTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => [t.uniqueIndex("clubs_slug_unique").on(table.slug)],
+  () => [],
 );
 
 export const users = createTable(
@@ -70,7 +70,7 @@ export const userClubs = createTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     clubId: t
-      .text()
+      .uuid()
       .notNull()
       .references(() => clubs.id, { onDelete: "cascade" }),
     role: roleEnum().notNull().default("USER"),
@@ -89,9 +89,7 @@ export const clubApiKeys = createTable(
   "club_api_keys",
   {
     id: t.text().primaryKey(),
-    clubId: t
-      .text()
-      .references(() => clubs.id, { onDelete: "cascade" }),
+    clubId: t.uuid().references(() => clubs.id, { onDelete: "cascade" }),
     hashedKey: t.text().notNull(),
     label: t.varchar({ length: 255 }),
     lastUsedAt: t.timestamp({ precision: 3, mode: "string" }),
@@ -135,7 +133,7 @@ export const rides = createTable(
   {
     id: t.text().primaryKey(),
     clubId: t
-      .text()
+      .uuid()
       .notNull()
       .references(() => clubs.id),
     name: t.varchar({ length: 255 }).notNull(),
@@ -236,7 +234,7 @@ export const repeatingRides = createTable(
   {
     id: t.text().primaryKey(),
     clubId: t
-      .text()
+      .uuid()
       .notNull()
       .references(() => clubs.id),
     name: t.varchar({ length: 255 }).notNull(),
@@ -275,7 +273,7 @@ export const archivedRides = createTable(
   {
     id: t.text().primaryKey(),
     clubId: t
-      .text()
+      .uuid()
       .notNull()
       .references(() => clubs.id),
     name: t.varchar({ length: 255 }).notNull(),
@@ -324,7 +322,7 @@ export const memberships = createTable(
     system: t.text().notNull().default("RiderHQ"),
     memberId: t.text().primaryKey().notNull(),
     clubId: t
-      .text()
+      .uuid()
       .notNull()
       .references(() => clubs.id),
     userId: t.text().notNull(),

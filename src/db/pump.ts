@@ -40,6 +40,8 @@ const main = async () => {
 
   console.info("Data migration started");
 
+  const BCC_UUID = "5cfb9e03-db2d-4371-b795-8402879f01f9";
+
   // Clubs (must come before any FK-dependent rows)
   const clubsData = await sourceDb.execute(sql`select
     id, slug, name, settings,
@@ -47,6 +49,9 @@ const main = async () => {
     created_at as "createdAt",
     updated_at as "updatedAt"
   from "clubs"`);
+  clubsData.forEach((row) => {
+    if (row.id === "bcc") row.id = BCC_UUID;
+  });
   // @ts-expect-error - data typing
   await db.insert(schema.clubs).values(clubsData);
   console.info("Clubs migrated", clubsData.length);
@@ -76,6 +81,9 @@ const main = async () => {
     joined_at as "joinedAt"
   from "user_clubs"`);
   if (userClubsData.length > 0) {
+    userClubsData.forEach((row) => {
+      if (row.clubId === "bcc") row.clubId = BCC_UUID;
+    });
     // @ts-expect-error - data typing
     await db.insert(schema.userClubs).values(userClubsData);
   }
@@ -116,6 +124,9 @@ const main = async () => {
     schedule_id as "scheduleId", created_at as "createdAt",
     updated_at as "updatedAt"
   from "rides"`);
+  ridesData.forEach((row) => {
+    if (row.clubId === "bcc") row.clubId = BCC_UUID;
+  });
   // @ts-expect-error - data typing
   await db.insert(schema.rides).values(ridesData);
   console.info("Rides migrated", ridesData.length);
@@ -138,6 +149,9 @@ const main = async () => {
     meet_point as "meetPoint", route, leader, notes,
     ride_limit as "rideLimit", created_at as "createdAt"
   from "repeating_rides"`);
+  repeatingRidesData.forEach((row) => {
+    if (row.clubId === "bcc") row.clubId = BCC_UUID;
+  });
   // @ts-expect-error - data typing
   await db.insert(schema.repeatingRides).values(repeatingRidesData);
   console.info("Repeating rides migrated", repeatingRidesData.length);
@@ -152,6 +166,9 @@ const main = async () => {
     created_at as "createdAt"
   from "archived_rides"`);
   if (archivedRidesData.length > 0) {
+    archivedRidesData.forEach((row) => {
+      if (row.clubId === "bcc") row.clubId = BCC_UUID;
+    });
     // @ts-expect-error - data typing
     await db.insert(schema.archivedRides).values(archivedRidesData);
   }

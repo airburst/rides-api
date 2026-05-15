@@ -52,7 +52,7 @@ export default async function seed(db: Db) {
 
     return {
       ...ride,
-      clubId: "bcc",
+      clubId: "5cfb9e03-db2d-4371-b795-8402879f01f9",
       rideDate,
     };
   });

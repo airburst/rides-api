@@ -1,6 +1,6 @@
 {
-  "id": "75acfefb-3a04-4dec-88a3-b790075e5f49",
-  "prevId": "82e36f74-2122-47f3-be34-b9c712a1507a",
+  "id": "a1fd8252-5faf-4aca-a40c-f2cac91153e7",
+  "prevId": "75acfefb-3a04-4dec-88a3-b790075e5f49",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -148,7 +148,7 @@
         },
         "club_id": {
           "name": "club_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -346,7 +346,7 @@
         },
         "club_id": {
           "name": "club_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -420,9 +420,10 @@
       "columns": {
         "id": {
           "name": "id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "slug": {
           "name": "slug",
@@ -465,23 +466,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "clubs_slug_unique": {
-          "name": "clubs_slug_unique",
-          "columns": [
-            {
-              "expression": "slug",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
@@ -508,7 +493,7 @@
         },
         "club_id": {
           "name": "club_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -617,7 +602,7 @@
         },
         "club_id": {
           "name": "club_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -768,7 +753,7 @@
         },
         "club_id": {
           "name": "club_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1048,7 +1033,7 @@
         },
         "club_id": {
           "name": "club_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
