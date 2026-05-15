@@ -21,6 +21,7 @@ const main = async () => {
 
   console.info("Cleaning tables");
 
+  // FK-safe order: leaf rows first, parent rows last.
   for (const table of [
     schema.archivedUserOnRides,
     schema.archivedRides,
@@ -29,7 +30,9 @@ const main = async () => {
     schema.userOnRides,
     schema.rides,
     schema.repeatingRides,
+    schema.userClubs,
     schema.users,
+    schema.clubs,
   ]) {
     // Intentionally deleting all rows for data migration
     await db.delete(table);
@@ -37,15 +40,45 @@ const main = async () => {
 
   console.info("Data migration started");
 
+  // Clubs (must come before any FK-dependent rows)
+  const clubsData = await sourceDb.execute(sql`select
+    id, slug, name, settings,
+    allowed_origins as "allowedOrigins",
+    created_at as "createdAt",
+    updated_at as "updatedAt"
+  from "clubs"`);
+  // @ts-expect-error - data typing
+  await db.insert(schema.clubs).values(clubsData);
+  console.info("Clubs migrated", clubsData.length);
+
   // Users
   const usersData = await sourceDb.execute(sql`select
-    id, name, email, image, mobile, emergency, role, preferences,
+    id, name, email,
+    email_verified as "emailVerified",
+    image,
+    image_large as "imageLarge",
+    mobile, emergency,
+    is_super_admin as "isSuperAdmin",
+    preferences,
     membership_id as "membershipId",
     membership_status as "membershipStatus"
   from "users"`);
   // @ts-expect-error - data typing
   await db.insert(schema.users).values(usersData);
   console.info("Users migrated", usersData.length);
+
+  // User_clubs (memberships)
+  const userClubsData = await sourceDb.execute(sql`select
+    user_id as "userId",
+    club_id as "clubId",
+    role,
+    joined_at as "joinedAt"
+  from "user_clubs"`);
+  if (userClubsData.length > 0) {
+    // @ts-expect-error - data typing
+    await db.insert(schema.userClubs).values(userClubsData);
+  }
+  console.info("User clubs migrated", userClubsData.length);
 
   // Accounts
   const accountsData = await sourceDb.execute(sql`SELECT
@@ -74,7 +107,9 @@ const main = async () => {
 
   // Rides
   const ridesData = await sourceDb.execute(sql`SELECT
-    id, name, ride_group as "rideGroup", ride_date as "rideDate",
+    id,
+    club_id as "clubId",
+    name, ride_group as "rideGroup", ride_date as "rideDate",
     destination, distance, meet_point as "meetPoint", route,
     leader, notes, ride_limit as "rideLimit", deleted, cancelled,
     schedule_id as "scheduleId", created_at as "createdAt",
@@ -95,7 +130,9 @@ const main = async () => {
 
   // Repeating rides
   const repeatingRidesData = await sourceDb.execute(sql`SELECT
-    id, name, schedule, winter_start_time as "winterStartTime",
+    id,
+    club_id as "clubId",
+    name, schedule, winter_start_time as "winterStartTime",
     ride_group as "rideGroup", destination, distance,
     meet_point as "meetPoint", route, leader, notes,
     ride_limit as "rideLimit", created_at as "createdAt"
@@ -106,7 +143,9 @@ const main = async () => {
 
   // Archived Rides
   const archivedRidesData = await sourceDb.execute(sql`SELECT
-    id, name, ride_group as "rideGroup", ride_date as "rideDate",
+    id,
+    club_id as "clubId",
+    name, ride_group as "rideGroup", ride_date as "rideDate",
     destination, distance, meet_point as "meetPoint", route,
     leader, notes, ride_limit as "rideLimit", deleted, cancelled,
     created_at as "createdAt"
