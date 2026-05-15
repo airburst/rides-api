@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-docker stop bcc3-postgres && docker rm bcc3-postgres
+docker stop rides-postgres && docker rm rides-postgres

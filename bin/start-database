@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Start local postgres container for development
 
-DB_CONTAINER_NAME="bcc3-postgres"
+DB_CONTAINER_NAME="rides-postgres"
 
 if ! [ -x "$(command -v docker)" ]; then
   echo "Docker is not installed. Please install and try again."
@@ -51,5 +51,5 @@ docker run -d \
   -p 5432:5432 \
   -e POSTGRES_USER="postgres" \
   -e POSTGRES_PASSWORD="$DB_PASSWORD" \
-  -e POSTGRES_DB=bcc3 \
+  -e POSTGRES_DB=rides \
   postgres:17 && echo "Database container '$DB_CONTAINER_NAME' created"
