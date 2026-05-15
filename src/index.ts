@@ -23,8 +23,15 @@ app.use(
   "*",
   cors({
     origin: (origin) => {
-      const allowed = ["http://localhost:3000", "https://bcc-rides.vercel.app"];
+      const allowed = ["https://bcc-rides.vercel.app"];
       if (allowed.includes(origin)) return origin;
+      // Any localhost port in development (vite may pick 3000, 3001, 3003, ...).
+      if (
+        process.env.NODE_ENV === "development" &&
+        /^http:\/\/localhost:\d+$/.test(origin)
+      ) {
+        return origin;
+      }
       // Allow Vercel preview deployments
       if (
         /^https:\/\/bcc-rides-.*-airbursts-projects\.vercel\.app$/.test(origin)
