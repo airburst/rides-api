@@ -146,6 +146,7 @@ const { repeatingRidesRouter } = await import("../repeating-rides.js");
 const { usersRouter } = await import("../users.js");
 const { generateRouter } = await import("../generate.js");
 const { archiveRouter } = await import("../archive.js");
+const { clubsRouter } = await import("../clubs.js");
 
 // Create test app with all routes
 const app = new Hono();
@@ -154,6 +155,7 @@ app.route("/repeating-rides", repeatingRidesRouter);
 app.route("/users", usersRouter);
 app.route("/generate", generateRouter);
 app.route("/archive", archiveRouter);
+app.route("/clubs", clubsRouter);
 
 beforeEach(() => {
   // Reset mocks
@@ -1203,6 +1205,59 @@ describe("🔐 Authorization Tests (CRITICAL)", () => {
         });
         expect(response.status).toBe(401);
       });
+    });
+  });
+
+  describe("Clubs Routes - DELETE /clubs/:slug", () => {
+    test("rejects invalid token (401)", async () => {
+      const response = await app.request("/clubs/bcc", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${TEST_TOKENS.INVALID}` },
+      });
+      expect(response.status).toBe(401);
+    });
+
+    test("rejects USER token (403)", async () => {
+      const response = await app.request("/clubs/bcc", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${TEST_TOKENS.USER}` },
+      });
+      expect(response.status).toBe(403);
+    });
+
+    test("rejects LEADER token (403)", async () => {
+      const response = await app.request("/clubs/bcc", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${TEST_TOKENS.LEADER}` },
+      });
+      expect(response.status).toBe(403);
+    });
+
+    test("rejects ADMIN (non-super) token (403)", async () => {
+      const response = await app.request("/clubs/bcc", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${TEST_TOKENS.ADMIN}` },
+      });
+      expect(response.status).toBe(403);
+    });
+
+    test("allows super-admin — returns 204", async () => {
+      const response = await app.request("/clubs/bcc", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${TEST_TOKENS.SUPERADMIN}` },
+      });
+      expect(response.status).toBe(204);
+    });
+
+    test("super-admin gets 404 for unknown slug", async () => {
+      mockDbQuery.clubs.findFirst.mockResolvedValueOnce(null);
+      const response = await app.request("/clubs/no-such-club", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${TEST_TOKENS.SUPERADMIN}` },
+      });
+      expect(response.status).toBe(404);
+      const data = await response.json();
+      expect(data).toHaveProperty("error", "Club not found");
     });
   });
 

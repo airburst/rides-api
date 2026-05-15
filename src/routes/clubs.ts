@@ -147,6 +147,30 @@ clubsRouter.post("/", requireSuperAdmin, async (c) => {
   }
 });
 
+// DELETE /clubs/:slug — super-admin only: delete a club and its memberships
+clubsRouter.delete("/:slug", requireSuperAdmin, async (c) => {
+  const slug = c.req.param("slug");
+
+  const club = await db.query.clubs.findFirst({
+    where: eq(clubs.slug, slug),
+  });
+  if (!club) {
+    return c.json({ error: "Club not found" }, 404);
+  }
+
+  try {
+    await db.transaction(async (tx) => {
+      await tx.delete(userClubs).where(eq(userClubs.clubId, club.id));
+      await tx.delete(clubs).where(eq(clubs.id, club.id));
+    });
+
+    return c.body(null, 204);
+  } catch (error) {
+    console.error("Delete club error:", error);
+    return c.json({ error: "Failed to delete club" }, 500);
+  }
+});
+
 // GET /clubs — list clubs the user is a member of (or all, if super-admin)
 clubsRouter.get("/", async (c) => {
   const user = getAuthUser(c);
