@@ -1208,9 +1208,9 @@ describe("🔐 Authorization Tests (CRITICAL)", () => {
     });
   });
 
-  describe("Clubs Routes - DELETE /clubs/:slug", () => {
+  describe("Clubs Routes - DELETE /clubs/:id", () => {
     test("rejects invalid token (401)", async () => {
-      const response = await app.request("/clubs/bcc", {
+      const response = await app.request(`/clubs/${TEST_CLUB.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${TEST_TOKENS.INVALID}` },
       });
@@ -1218,7 +1218,7 @@ describe("🔐 Authorization Tests (CRITICAL)", () => {
     });
 
     test("rejects USER token (403)", async () => {
-      const response = await app.request("/clubs/bcc", {
+      const response = await app.request(`/clubs/${TEST_CLUB.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${TEST_TOKENS.USER}` },
       });
@@ -1226,7 +1226,7 @@ describe("🔐 Authorization Tests (CRITICAL)", () => {
     });
 
     test("rejects LEADER token (403)", async () => {
-      const response = await app.request("/clubs/bcc", {
+      const response = await app.request(`/clubs/${TEST_CLUB.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${TEST_TOKENS.LEADER}` },
       });
@@ -1234,7 +1234,7 @@ describe("🔐 Authorization Tests (CRITICAL)", () => {
     });
 
     test("rejects ADMIN (non-super) token (403)", async () => {
-      const response = await app.request("/clubs/bcc", {
+      const response = await app.request(`/clubs/${TEST_CLUB.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${TEST_TOKENS.ADMIN}` },
       });
@@ -1242,16 +1242,16 @@ describe("🔐 Authorization Tests (CRITICAL)", () => {
     });
 
     test("allows super-admin — returns 204", async () => {
-      const response = await app.request("/clubs/bcc", {
+      const response = await app.request(`/clubs/${TEST_CLUB.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${TEST_TOKENS.SUPERADMIN}` },
       });
       expect(response.status).toBe(204);
     });
 
-    test("super-admin gets 404 for unknown slug", async () => {
+    test("super-admin gets 404 for unknown id", async () => {
       mockDbQuery.clubs.findFirst.mockResolvedValueOnce(null);
-      const response = await app.request("/clubs/no-such-club", {
+      const response = await app.request("/clubs/no-such-id", {
         method: "DELETE",
         headers: { Authorization: `Bearer ${TEST_TOKENS.SUPERADMIN}` },
       });

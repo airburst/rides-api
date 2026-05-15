@@ -147,12 +147,12 @@ clubsRouter.post("/", requireSuperAdmin, async (c) => {
   }
 });
 
-// DELETE /clubs/:slug — super-admin only: delete a club and its memberships
-clubsRouter.delete("/:slug", requireSuperAdmin, async (c) => {
-  const slug = c.req.param("slug");
+// DELETE /clubs/:id — super-admin only: delete a club and its memberships
+clubsRouter.delete("/:id", requireSuperAdmin, async (c) => {
+  const id = c.req.param("id");
 
   const club = await db.query.clubs.findFirst({
-    where: eq(clubs.slug, slug),
+    where: eq(clubs.id, id),
   });
   if (!club) {
     return c.json({ error: "Club not found" }, 404);
@@ -209,13 +209,13 @@ clubsRouter.get("/", async (c) => {
   }
 });
 
-// GET /clubs/:slug — fetch single club (member or super-admin)
-clubsRouter.get("/:slug", async (c) => {
+// GET /clubs/:id — fetch single club (member or super-admin)
+clubsRouter.get("/:id", async (c) => {
   const user = getAuthUser(c);
-  const slug = c.req.param("slug");
+  const id = c.req.param("id");
 
   const club = await db.query.clubs.findFirst({
-    where: eq(clubs.slug, slug),
+    where: eq(clubs.id, id),
   });
   if (!club) {
     return c.json({ error: "Club not found" }, 404);
@@ -236,13 +236,13 @@ clubsRouter.get("/:slug", async (c) => {
   return c.json({ club });
 });
 
-// PATCH /clubs/:slug — update settings (club ADMIN or super-admin)
-clubsRouter.patch("/:slug", async (c) => {
+// PATCH /clubs/:id — update settings (club ADMIN or super-admin)
+clubsRouter.patch("/:id", async (c) => {
   const user = getAuthUser(c);
-  const slug = c.req.param("slug");
+  const id = c.req.param("id");
 
   const club = await db.query.clubs.findFirst({
-    where: eq(clubs.slug, slug),
+    where: eq(clubs.id, id),
   });
   if (!club) {
     return c.json({ error: "Club not found" }, 404);
@@ -305,13 +305,13 @@ async function requireClubAdmin(
   return membership?.role === "ADMIN";
 }
 
-// POST /clubs/:slug/members — add a user to the club
-clubsRouter.post("/:slug/members", async (c) => {
+// POST /clubs/:id/members — add a user to the club
+clubsRouter.post("/:id/members", async (c) => {
   const user = getAuthUser(c);
-  const slug = c.req.param("slug");
+  const id = c.req.param("id");
 
   const club = await db.query.clubs.findFirst({
-    where: eq(clubs.slug, slug),
+    where: eq(clubs.id, id),
   });
   if (!club) {
     return c.json({ error: "Club not found" }, 404);
@@ -362,14 +362,14 @@ clubsRouter.post("/:slug/members", async (c) => {
   }
 });
 
-// PATCH /clubs/:slug/members/:userId — change a member's role
-clubsRouter.patch("/:slug/members/:userId", async (c) => {
+// PATCH /clubs/:id/members/:userId — change a member's role
+clubsRouter.patch("/:id/members/:userId", async (c) => {
   const user = getAuthUser(c);
-  const slug = c.req.param("slug");
+  const id = c.req.param("id");
   const targetUserId = c.req.param("userId");
 
   const club = await db.query.clubs.findFirst({
-    where: eq(clubs.slug, slug),
+    where: eq(clubs.id, id),
   });
   if (!club) {
     return c.json({ error: "Club not found" }, 404);
@@ -417,14 +417,14 @@ clubsRouter.patch("/:slug/members/:userId", async (c) => {
   }
 });
 
-// DELETE /clubs/:slug/members/:userId — remove a user from the club
-clubsRouter.delete("/:slug/members/:userId", async (c) => {
+// DELETE /clubs/:id/members/:userId — remove a user from the club
+clubsRouter.delete("/:id/members/:userId", async (c) => {
   const user = getAuthUser(c);
-  const slug = c.req.param("slug");
+  const id = c.req.param("id");
   const targetUserId = c.req.param("userId");
 
   const club = await db.query.clubs.findFirst({
-    where: eq(clubs.slug, slug),
+    where: eq(clubs.id, id),
   });
   if (!club) {
     return c.json({ error: "Club not found" }, 404);
