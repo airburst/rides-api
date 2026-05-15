@@ -58,6 +58,41 @@ async function findOrProvisionUser(
 export const authMiddleware = createMiddleware<{
   Variables: { user: AuthUser };
 }>(async (c, next) => {
+  // dev-only auth bypass — refuses to operate in production
+  if (process.env.DEV_SKIP_AUTH === "true") {
+    if (process.env.NODE_ENV !== "development") {
+      return c.json(
+        { error: "DEV_SKIP_AUTH is only allowed when NODE_ENV=development" },
+        500,
+      );
+    }
+    const email = process.env.DEV_SKIP_AUTH_USER;
+    if (!email) {
+      return c.json(
+        { error: "DEV_SKIP_AUTH_USER is required when DEV_SKIP_AUTH=true" },
+        500,
+      );
+    }
+    const user = await db.query.users.findFirst({
+      where: eq(users.email, email),
+    });
+    if (!user) {
+      return c.json(
+        { error: `DEV_SKIP_AUTH_USER not found in DB: ${email}` },
+        500,
+      );
+    }
+    // auth0Id sentinel: never a real Auth0 sub (those have form "auth0|...")
+    c.set("user", {
+      id: user.id,
+      auth0Id: "dev-skip-auth",
+      isSuperAdmin: user.isSuperAdmin,
+      name: user.name,
+      email: user.email,
+    });
+    return next();
+  }
+
   const authHeader = c.req.header("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return c.json({ error: "Unauthorized" }, 401);
@@ -91,6 +126,41 @@ export const authMiddleware = createMiddleware<{
 export const optionalAuth = createMiddleware<{
   Variables: { user?: AuthUser };
 }>(async (c, next) => {
+  // dev-only auth bypass — refuses to operate in production
+  if (process.env.DEV_SKIP_AUTH === "true") {
+    if (process.env.NODE_ENV !== "development") {
+      return c.json(
+        { error: "DEV_SKIP_AUTH is only allowed when NODE_ENV=development" },
+        500,
+      );
+    }
+    const email = process.env.DEV_SKIP_AUTH_USER;
+    if (!email) {
+      return c.json(
+        { error: "DEV_SKIP_AUTH_USER is required when DEV_SKIP_AUTH=true" },
+        500,
+      );
+    }
+    const user = await db.query.users.findFirst({
+      where: eq(users.email, email),
+    });
+    if (!user) {
+      return c.json(
+        { error: `DEV_SKIP_AUTH_USER not found in DB: ${email}` },
+        500,
+      );
+    }
+    // auth0Id sentinel: never a real Auth0 sub (those have form "auth0|...")
+    c.set("user", {
+      id: user.id,
+      auth0Id: "dev-skip-auth",
+      isSuperAdmin: user.isSuperAdmin,
+      name: user.name,
+      email: user.email,
+    });
+    return next();
+  }
+
   const authHeader = c.req.header("Authorization");
   if (authHeader?.startsWith("Bearer ")) {
     try {
