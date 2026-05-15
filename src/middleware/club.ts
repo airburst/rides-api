@@ -38,7 +38,7 @@ export const resolveClub = createMiddleware<{
   }
 
   const club = clubId
-    ? await findClubById(clubId)
+    ? (await findClubById(clubId)) ?? (await findClubBySlug(clubId))
     : await findClubBySlug(clubSlug ?? DEFAULT_CLUB_SLUG);
   if (!club) {
     return c.json({ error: "Club not found" }, 404);
