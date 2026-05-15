@@ -6,7 +6,6 @@ ALTER TABLE "public"."clubs" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "public"."memberships" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "public"."repeating_rides" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "public"."rides" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-ALTER TABLE "public"."routes" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "public"."sessions" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "public"."user_clubs" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "public"."users" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint

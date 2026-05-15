@@ -51,10 +51,11 @@ const main = async () => {
   await db.insert(schema.clubs).values(clubsData);
   console.info("Clubs migrated", clubsData.length);
 
-  // Users
+  // Users (emailVerified intentionally omitted — Auth0 backfills it on sign-in,
+  // and pulling a `withTimezone: true, mode: Date` column as a string would
+  // break drizzle's value mapper.)
   const usersData = await sourceDb.execute(sql`select
     id, name, email,
-    email_verified as "emailVerified",
     image,
     image_large as "imageLarge",
     mobile, emergency,
