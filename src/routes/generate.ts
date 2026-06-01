@@ -1,12 +1,12 @@
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db/index.js";
 import { accounts, repeatingRides, rides } from "../db/schema/index.js";
 import { verifyAuth0Token } from "../lib/auth0.js";
 import { cacheInvalidatePattern } from "../lib/cache.js";
 import {
+  filterExistingRides,
   makeRidesInPeriod,
-  updateRRuleStartDate,
   type RepeatingRideDb,
   type RideSet,
 } from "../lib/rrule-utils.js";
@@ -19,9 +19,15 @@ interface GenerateResult {
   error?: string;
 }
 
-// Helper to create rides from a RideSet
+// Helper to create rides from a RideSet.
+//
+// Idempotent: a ride is uniquely identified by (scheduleId, rideDate). Any
+// occurrence that already exists for this schedule — including soft-deleted ones,
+// so a deliberately-removed ride is never resurrected — is skipped. Running
+// /generate repeatedly (cron + manual, overlapping windows) therefore never
+// creates duplicates. The check + insert run in one transaction.
 const createRidesFromSet = async (
-  { id, rides: rideList, schedule }: RideSet,
+  { id, rides: rideList }: RideSet,
   clubId: string,
 ): Promise<GenerateResult> => {
   if (rideList.length === 0) {
@@ -29,37 +35,54 @@ const createRidesFromSet = async (
   }
 
   try {
-    // Insert all rides
-    const insertData = rideList.map((ride) => ({
-      id: crypto.randomUUID(),
-      clubId,
-      name: ride.name,
-      rideDate: ride.rideDate,
-      rideGroup: ride.rideGroup,
-      destination: ride.destination,
-      distance: ride.distance,
-      meetPoint: ride.meetPoint,
-      route: ride.route,
-      leader: ride.leader,
-      notes: ride.notes,
-      rideLimit: ride.rideLimit ?? -1,
-      scheduleId: ride.scheduleId,
-    }));
+    return await db.transaction(async (tx) => {
+      // Find which candidate occurrences already exist for this schedule.
+      // NOTE: intentionally NOT filtered by `deleted` — a soft-deleted ride
+      // still counts as "exists" so we never resurrect a deliberately-removed
+      // occurrence. Scoped to clubId per tenancy rules.
+      const candidateDates = rideList.map((r) => r.rideDate);
+      const existing = id
+        ? await tx
+            .select({ rideDate: rides.rideDate })
+            .from(rides)
+            .where(
+              and(
+                eq(rides.clubId, clubId),
+                eq(rides.scheduleId, id),
+                inArray(rides.rideDate, candidateDates),
+              ),
+            )
+        : [];
 
-    await db.insert(rides).values(insertData);
+      const newRides = filterExistingRides(
+        rideList,
+        existing.map((e) => e.rideDate),
+      );
 
-    // Update the repeating ride schedule start date
-    const lastDate = rideList.at(-1)?.rideDate;
-    const updatedSchedule = updateRRuleStartDate(schedule, lastDate);
+      if (newRides.length === 0) {
+        return { scheduleId: id, count: 0 };
+      }
 
-    if (id) {
-      await db
-        .update(repeatingRides)
-        .set({ schedule: updatedSchedule, updatedAt: new Date().toISOString() })
-        .where(eq(repeatingRides.id, id));
-    }
+      const insertData = newRides.map((ride) => ({
+        id: crypto.randomUUID(),
+        clubId,
+        name: ride.name,
+        rideDate: ride.rideDate,
+        rideGroup: ride.rideGroup,
+        destination: ride.destination,
+        distance: ride.distance,
+        meetPoint: ride.meetPoint,
+        route: ride.route,
+        leader: ride.leader,
+        notes: ride.notes,
+        rideLimit: ride.rideLimit ?? -1,
+        scheduleId: ride.scheduleId,
+      }));
 
-    return { scheduleId: id, count: rideList.length };
+      await tx.insert(rides).values(insertData);
+
+      return { scheduleId: id, count: newRides.length };
+    });
   } catch (error) {
     console.error("Error creating rides:", error);
     return { scheduleId: id, error: "Failed to create rides" };

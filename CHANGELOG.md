@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.1.1
+
+### Patch Changes
+
+- Make `/generate` idempotent so rides are never duplicated. Generation previously inserted every computed occurrence with no existence check (the only guard was mutating the template's DTSTART, which was fragile and corrupted the template start date), so re-running the cron could create duplicate rides. Generation now skips any occurrence that already exists for the same `(scheduleId, rideDate)` — including soft-deleted ones, so a deliberately-removed ride is never resurrected — within a transaction, and the DTSTART-mutation hack is removed. The generation window also extends through the end of next month (matching the client) so templates created late in a month still produce rides; with idempotency, the cron's overlapping window is harmless. A reviewed cleanup script for pre-existing duplicates is provided in `scripts/dedupe-generated-rides.sql`.
+
 ## 2.1.0
 
 ### Minor Changes

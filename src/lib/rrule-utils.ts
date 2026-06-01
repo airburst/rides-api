@@ -104,11 +104,28 @@ const generateRide = (
   ) as unknown as TemplateRide;
 };
 
-// Get next month date
-const getNextMonth = (date?: string): string => {
+// Return only the rides whose occurrence (by timestamp value) is not already
+// present in `existingRideDates`. Compares by epoch ms so DB timestamp string
+// formats (e.g. "2026-07-02 18:30:00+00") match generated ISO strings. The
+// caller decides what "existing" means (it includes soft-deleted rides, so a
+// deliberately-deleted occurrence is never regenerated).
+export const filterExistingRides = (
+  rideList: TemplateRide[],
+  existingRideDates: string[],
+): TemplateRide[] => {
+  const existingMs = new Set(
+    existingRideDates.map((d) => new Date(d).getTime()),
+  );
+  return rideList.filter((r) => !existingMs.has(new Date(r.rideDate).getTime()));
+};
+
+// Start of the month after next, relative to `date` (the exclusive window end).
+// Set day to 1 BEFORE shifting months to avoid overflow (e.g. Jan 31 + 1 month).
+const endOfNextMonth = (date?: string): string => {
   const now = date ? new Date(date) : new Date();
-  now.setMonth(now.getMonth() + 1);
   now.setDate(1);
+  now.setMonth(now.getMonth() + 2);
+  now.setHours(0, 0, 0, 0);
   return now.toISOString();
 };
 
@@ -119,8 +136,10 @@ export const makeRidesInPeriod = (
 ): RideSet => {
   const { id, schedule } = template;
   const start = date ? new Date(date) : new Date();
-  const nextMonth = getNextMonth(date);
-  const end = new Date(nextMonth);
+  // Through the end of next month, so templates created late in a month still
+  // generate their upcoming rides. Overlap on re-runs is harmless: ride
+  // creation is idempotent (see createRidesFromSet).
+  const end = new Date(endOfNextMonth(date));
   const rideDates = RRule.fromString(schedule).between(start, end);
 
   // Update timings if winterStartTime is set
