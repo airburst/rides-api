@@ -13,7 +13,6 @@
  *   SELECT COUNT(*) FROM accounts WHERE provider_id = 'credential' AND password IS NULL;
  */
 
-import "dotenv/config";
 import postgres from "postgres";
 import { auth } from "../src/lib/auth.js";
 
