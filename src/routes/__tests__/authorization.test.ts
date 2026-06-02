@@ -19,19 +19,19 @@ process.env.AUTH0_AUDIENCE = "https://test-api.example.com";
 // Create a mapping of auth0 IDs to user data for easier lookup
 const usersByAuth0Id: Record<string, any> = {
   [TEST_USERS.USER.auth0Id]: {
-    providerAccountId: TEST_USERS.USER.auth0Id,
+    accountId: TEST_USERS.USER.auth0Id,
     users: TEST_USERS.USER,
   },
   [TEST_USERS.LEADER.auth0Id]: {
-    providerAccountId: TEST_USERS.LEADER.auth0Id,
+    accountId: TEST_USERS.LEADER.auth0Id,
     users: TEST_USERS.LEADER,
   },
   [TEST_USERS.ADMIN.auth0Id]: {
-    providerAccountId: TEST_USERS.ADMIN.auth0Id,
+    accountId: TEST_USERS.ADMIN.auth0Id,
     users: TEST_USERS.ADMIN,
   },
   [TEST_USERS.SUPERADMIN.auth0Id]: {
-    providerAccountId: TEST_USERS.SUPERADMIN.auth0Id,
+    accountId: TEST_USERS.SUPERADMIN.auth0Id,
     users: TEST_USERS.SUPERADMIN,
   },
 };
@@ -132,6 +132,14 @@ const mockVerifyAuth0Token = mock((token: string) => {
       return Promise.reject(new Error("Unknown token"));
   }
 });
+
+mock.module("../../lib/auth.js", () => ({
+  auth: {
+    api: {
+      getSession: mock(() => Promise.resolve(null)),
+    },
+  },
+}));
 
 mock.module("../../lib/auth0.js", () => ({
   verifyAuth0Token: mockVerifyAuth0Token,

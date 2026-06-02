@@ -108,7 +108,7 @@ generateRouter.post("/", async (c) => {
 
       // Look up user
       const account = await db.query.accounts.findFirst({
-        where: eq(accounts.providerAccountId, payload.sub),
+        where: eq(accounts.accountId, payload.sub),
         with: { users: true },
       });
 

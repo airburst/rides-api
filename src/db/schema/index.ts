@@ -38,7 +38,7 @@ export const users = createTable(
     id: t.text().primaryKey(),
     name: t.varchar({ length: 255 }),
     email: t.varchar({ length: 255 }).notNull(),
-    emailVerified: t.timestamp({ precision: 3, withTimezone: true }),
+    emailVerified: t.boolean().default(false),
     image: t.text(),
     imageLarge: t.text(),
     mobile: t.varchar({ length: 255 }),
@@ -47,6 +47,7 @@ export const users = createTable(
     preferences: t.json().default({ units: "km" }),
     membershipId: t.text(),
     membershipStatus: t.varchar({ length: 255 }).default("NOT_MEMBER"),
+    lastLoginAt: t.timestamp({ precision: 3, mode: "string" }),
     createdAt: t
       .timestamp({ precision: 3, mode: "string" })
       .defaultNow()
@@ -106,26 +107,30 @@ export const clubApiKeys = createTable(
 export const accounts = createTable(
   "accounts",
   {
+    id: t.text().primaryKey(),
+    accountId: t.text().notNull(),
+    providerId: t.text().notNull(),
     userId: t
-      .varchar({ length: 255 })
+      .text()
       .notNull()
-      .references(() => users.id),
-    type: t.varchar({ length: 255 }).notNull(),
-    provider: t.varchar({ length: 255 }).notNull(),
-    providerAccountId: t.varchar({ length: 255 }).notNull(),
-    refresh_token: t.text(),
-    access_token: t.text(),
-    expires_at: t.integer(),
-    token_type: t.varchar({ length: 255 }),
-    scope: t.varchar({ length: 255 }),
-    id_token: t.text(),
-    session_state: t.varchar({ length: 255 }),
+      .references(() => users.id, { onDelete: "cascade" }),
+    password: t.text(),
+    accessToken: t.text(),
+    refreshToken: t.text(),
+    idToken: t.text(),
+    accessTokenExpiresAt: t.timestamp({ precision: 3, mode: "string" }),
+    refreshTokenExpiresAt: t.timestamp({ precision: 3, mode: "string" }),
+    scope: t.text(),
+    createdAt: t
+      .timestamp({ precision: 3, mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: t
+      .timestamp({ precision: 3, mode: "string" })
+      .defaultNow()
+      .notNull(),
   },
-  (table) => [
-    t.primaryKey({ columns: [table.provider, table.providerAccountId] }),
-    t.index("account_userId_idx").on(table.userId),
-    t.index("idx_accounts_provider_account_id").on(table.providerAccountId),
-  ],
+  (table) => [t.index("account_user_id_idx").on(table.userId)],
 );
 
 export const rides = createTable(
@@ -338,31 +343,41 @@ export const memberships = createTable(
   (table) => [t.index("idx_memberships_club_id").on(table.clubId)],
 );
 
-// Sessions (NextAuth - legacy, kept for DB compatibility)
+// Sessions (better-auth)
 export const sessions = createTable(
   "sessions",
   {
-    sessionToken: t.varchar({ length: 255 }).notNull().primaryKey(),
+    id: t.text().primaryKey(),
+    expiresAt: t.timestamp({ precision: 3, mode: "string" }).notNull(),
+    token: t.text().notNull().unique(),
+    createdAt: t
+      .timestamp({ precision: 3, mode: "string" })
+      .defaultNow()
+      .notNull(),
+    updatedAt: t
+      .timestamp({ precision: 3, mode: "string" })
+      .defaultNow()
+      .notNull(),
+    ipAddress: t.text(),
+    userAgent: t.text(),
     userId: t
-      .varchar({ length: 255 })
+      .text()
       .notNull()
-      .references(() => users.id),
-    expires: t.timestamp({ withTimezone: true }).notNull(),
+      .references(() => users.id, { onDelete: "cascade" }),
   },
-  (table) => [t.index("session_userId_idx").on(table.userId)],
+  (table) => [t.index("session_user_id_idx").on(table.userId)],
 );
 
 export const sessionRelations = relations(sessions, ({ one }) => ({
   users: one(users, { fields: [sessions.userId], references: [users.id] }),
 }));
 
-// Verification Tokens (NextAuth - legacy, kept for DB compatibility)
-export const verificationTokens = createTable(
-  "verification_tokens",
-  {
-    identifier: t.varchar({ length: 255 }).notNull(),
-    token: t.varchar({ length: 255 }).notNull(),
-    expires: t.timestamp({ precision: 3, withTimezone: true }).notNull(),
-  },
-  (vt) => [t.primaryKey({ columns: [vt.identifier, vt.token] })],
-);
+// Verification (better-auth)
+export const verification = createTable("verification", {
+  id: t.text().primaryKey(),
+  identifier: t.text().notNull(),
+  value: t.text().notNull(),
+  expiresAt: t.timestamp({ precision: 3, mode: "string" }).notNull(),
+  createdAt: t.timestamp({ precision: 3, mode: "string" }),
+  updatedAt: t.timestamp({ precision: 3, mode: "string" }),
+});

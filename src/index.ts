@@ -6,6 +6,7 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import pkg from "../package.json" with { type: "json" };
 import { sqlClient } from "./db/index.js";
+import { auth } from "./lib/auth.js";
 import { closeRedisConnection, getRedisClient } from "./lib/cache.js";
 import { archiveRouter } from "./routes/archive.js";
 import { clubsRouter } from "./routes/clubs.js";
@@ -13,6 +14,7 @@ import { generateRouter } from "./routes/generate.js";
 import { repeatingRidesRouter } from "./routes/repeating-rides.js";
 import { riderhqRouter } from "./routes/riderhq.js";
 import { ridesRouter } from "./routes/rides.js";
+import { signupRouter } from "./routes/signup.js";
 import { usersRouter } from "./routes/users.js";
 
 const app = new Hono();
@@ -23,7 +25,10 @@ app.use(
   "*",
   cors({
     origin: (origin) => {
-      const allowed = ["https://bcc-rides.vercel.app"];
+      const allowed = [
+        "https://bcc-rides.vercel.app",
+        "https://app.fairhursts.net",
+      ];
       if (allowed.includes(origin)) return origin;
       // Any localhost port in development (vite may pick 3000, 3001, 3003, ...).
       if (
@@ -48,6 +53,8 @@ app.use(
 app.use("/avatars/*", serveStatic({ root: "./public" }));
 
 // Routes
+app.on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw));
+app.route("/signup", signupRouter);
 app.route("/rides", ridesRouter);
 app.route("/users", usersRouter);
 app.route("/repeating-rides", repeatingRidesRouter);
