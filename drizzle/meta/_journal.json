@@ -120,7 +120,7 @@
       "when": 1778863200000,
       "tag": "0016_repair_club_id_uuid_conversion",
       "breakpoints": true
-    }
+    },
     {
       "idx": 17,
       "version": "7",
