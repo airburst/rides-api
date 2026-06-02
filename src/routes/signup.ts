@@ -1,8 +1,8 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../db/index.js";
-import { clubs, userClubs } from "../db/schema/index.js";
+import { clubs, userClubs, users } from "../db/schema/index.js";
 import { auth } from "../lib/auth.js";
 
 export const signupRouter = new Hono();
@@ -36,20 +36,58 @@ signupRouter.post("/club/:slug", async (c) => {
 
   const { email, password, name } = parsed.data;
 
-  const result = await auth.api.signUpEmail({
-    body: { email, password, name },
-    headers: c.req.raw.headers,
+  // Check for existing account before calling better-auth — signUpEmail with
+  // requireEmailVerification returns a phantom user ID that is never persisted
+  // when the email already exists, which would cause a FK violation on user_clubs.
+  const existingUser = await db.query.users.findFirst({
+    where: eq(users.email, email),
   });
 
-  if (!result.user.id) {
+  if (existingUser) {
+    const membership = await db.query.userClubs.findFirst({
+      where: and(
+        eq(userClubs.userId, existingUser.id),
+        eq(userClubs.clubId, club.id),
+      ),
+    });
+    return c.json(
+      {
+        error: membership
+          ? "Already a member of this club"
+          : "An account with this email already exists",
+      },
+      409,
+    );
+  }
+
+  try {
+    await auth.api.signUpEmail({
+      body: { email, password, name },
+      headers: c.req.raw.headers,
+    });
+  } catch {
     return c.json({ error: "Signup failed" }, 500);
   }
 
-  await db.insert(userClubs).values({
-    userId: result.user.id,
-    clubId: club.id,
-    role: "USER",
+  // Look up by email — better-auth's returned user.id can't be trusted when
+  // requireEmailVerification is enabled (see: phantom-id bug above).
+  const newUser = await db.query.users.findFirst({
+    where: eq(users.email, email),
   });
+
+  if (!newUser) {
+    return c.json({ error: "Signup failed" }, 500);
+  }
+
+  try {
+    await db.insert(userClubs).values({
+      userId: newUser.id,
+      clubId: club.id,
+      role: "USER",
+    });
+  } catch {
+    return c.json({ error: "Already a member of this club" }, 409);
+  }
 
   return c.json({ success: true, requiresVerification: true }, 201);
 });

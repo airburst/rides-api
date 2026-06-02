@@ -52,7 +52,7 @@ app.use(
 app.use("/avatars/*", serveStatic({ root: "./public" }));
 
 // Routes
-app.on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw));
+app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 app.route("/signup", signupRouter);
 app.route("/rides", ridesRouter);
 app.route("/users", usersRouter);
