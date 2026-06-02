@@ -7,9 +7,9 @@ export default async function seed(db: Db) {
     id,
     userId,
     token: sessionToken,
-    expiresAt: expires,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    expiresAt: new Date(expires),
+    createdAt: new Date(),
+    updatedAt: new Date(),
   }));
   await db.insert(sessions).values(rows);
 }

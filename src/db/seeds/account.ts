@@ -20,8 +20,8 @@ export default async function seed(db: Db) {
       accessToken: access_token,
       idToken: id_token,
       scope: scope,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
     }),
   );
   await db.insert(accounts).values(rows);

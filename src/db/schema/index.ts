@@ -47,13 +47,13 @@ export const users = createTable(
     preferences: t.json().default({ units: "km" }),
     membershipId: t.text(),
     membershipStatus: t.varchar({ length: 255 }).default("NOT_MEMBER"),
-    lastLoginAt: t.timestamp({ precision: 3, mode: "string" }),
+    lastLoginAt: t.timestamp({ precision: 3, mode: "date" }),
     createdAt: t
-      .timestamp({ precision: 3, mode: "string" })
+      .timestamp({ precision: 3, mode: "date" })
       .defaultNow()
       .notNull(),
     updatedAt: t
-      .timestamp({ precision: 3, mode: "string" })
+      .timestamp({ precision: 3, mode: "date" })
       .defaultNow()
       .notNull(),
   },
@@ -118,15 +118,15 @@ export const accounts = createTable(
     accessToken: t.text(),
     refreshToken: t.text(),
     idToken: t.text(),
-    accessTokenExpiresAt: t.timestamp({ precision: 3, mode: "string" }),
-    refreshTokenExpiresAt: t.timestamp({ precision: 3, mode: "string" }),
+    accessTokenExpiresAt: t.timestamp({ precision: 3, mode: "date" }),
+    refreshTokenExpiresAt: t.timestamp({ precision: 3, mode: "date" }),
     scope: t.text(),
     createdAt: t
-      .timestamp({ precision: 3, mode: "string" })
+      .timestamp({ precision: 3, mode: "date" })
       .defaultNow()
       .notNull(),
     updatedAt: t
-      .timestamp({ precision: 3, mode: "string" })
+      .timestamp({ precision: 3, mode: "date" })
       .defaultNow()
       .notNull(),
   },
@@ -348,14 +348,14 @@ export const sessions = createTable(
   "sessions",
   {
     id: t.text().primaryKey(),
-    expiresAt: t.timestamp({ precision: 3, mode: "string" }).notNull(),
+    expiresAt: t.timestamp({ precision: 3, mode: "date" }).notNull(),
     token: t.text().notNull().unique(),
     createdAt: t
-      .timestamp({ precision: 3, mode: "string" })
+      .timestamp({ precision: 3, mode: "date" })
       .defaultNow()
       .notNull(),
     updatedAt: t
-      .timestamp({ precision: 3, mode: "string" })
+      .timestamp({ precision: 3, mode: "date" })
       .defaultNow()
       .notNull(),
     ipAddress: t.text(),
@@ -377,7 +377,7 @@ export const verification = createTable("verification", {
   id: t.text().primaryKey(),
   identifier: t.text().notNull(),
   value: t.text().notNull(),
-  expiresAt: t.timestamp({ precision: 3, mode: "string" }).notNull(),
-  createdAt: t.timestamp({ precision: 3, mode: "string" }),
-  updatedAt: t.timestamp({ precision: 3, mode: "string" }),
+  expiresAt: t.timestamp({ precision: 3, mode: "date" }).notNull(),
+  createdAt: t.timestamp({ precision: 3, mode: "date" }),
+  updatedAt: t.timestamp({ precision: 3, mode: "date" }),
 });

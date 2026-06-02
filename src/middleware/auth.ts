@@ -20,7 +20,7 @@ export interface AuthUser {
 function updateLastLogin(userId: string): void {
   void db
     .update(users)
-    .set({ lastLoginAt: new Date().toISOString() })
+    .set({ lastLoginAt: new Date() })
     .where(eq(users.id, userId));
 }
 

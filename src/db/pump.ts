@@ -99,7 +99,7 @@ const main = async () => {
     scope
   from "accounts"`);
   if (accountsRaw.length > 0) {
-    const now = new Date().toISOString();
+    const now = new Date();
     const accountsData = accountsRaw.map((row) => ({
       id: crypto.randomUUID(),
       userId: row.userId,
