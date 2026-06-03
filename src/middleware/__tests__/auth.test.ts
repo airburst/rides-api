@@ -25,6 +25,14 @@ mock.module("../../db/index.js", () => ({
   },
 }));
 
+mock.module("../../lib/auth.js", () => ({
+  auth: {
+    api: {
+      getSession: mock(async () => null),
+    },
+  },
+}));
+
 mock.module("../../lib/auth0.js", () => ({
   verifyAuth0Token: mock(async () => {
     throw new Error("Invalid token");

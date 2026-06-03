@@ -32,8 +32,8 @@ const existingUser = {
 
 const mockInsert = mock((table: any) => ({
   values: mock((data: any) => {
-    // Distinguish users vs accounts by presence of 'provider' field
-    if (data.provider) {
+    // Distinguish users vs accounts by presence of 'providerId' field
+    if (data.providerId) {
       insertedAccounts.push(data);
     } else {
       insertedUsers.push(data);
@@ -50,11 +50,9 @@ const mockDbQuery = {
       // For existing user, always return the account
       // For new user on first call return null, triggering provisioning
       // After provisioning, the code calls users.findFirst instead
-      if (
-        lastVerifiedSub === EXISTING_USER_SUB
-      ) {
+      if (lastVerifiedSub === EXISTING_USER_SUB) {
         return Promise.resolve({
-          providerAccountId: EXISTING_USER_SUB,
+          accountId: EXISTING_USER_SUB,
           users: existingUser,
         });
       }
@@ -82,6 +80,11 @@ const mockDb = {
   query: mockDbQuery,
   transaction: mock((cb: any) => cb(mockDb)),
   insert: mockInsert,
+  update: mock(() => ({
+    set: mock(() => ({
+      where: mock(() => Promise.resolve()),
+    })),
+  })),
 };
 
 mock.module("../../db/index.js", () => ({ db: mockDb }));
@@ -98,6 +101,14 @@ const mockFetchAuth0UserInfo = mock((_token: string): Promise<any> => {
     picture: "https://cdn.auth0.com/avatars/ne.png",
   });
 });
+
+mock.module("../../lib/auth.js", () => ({
+  auth: {
+    api: {
+      getSession: mock(async () => null),
+    },
+  },
+}));
 
 mock.module("../../lib/auth0.js", () => ({
   verifyAuth0Token: mock((token: string) => {
@@ -170,9 +181,8 @@ describe("JIT user provisioning", () => {
 
     // Should have inserted an account row
     expect(insertedAccounts).toHaveLength(1);
-    expect(insertedAccounts[0].provider).toBe("auth0");
-    expect(insertedAccounts[0].providerAccountId).toBe(NEW_USER_SUB);
-    expect(insertedAccounts[0].type).toBe("oauth");
+    expect(insertedAccounts[0].providerId).toBe("auth0");
+    expect(insertedAccounts[0].accountId).toBe(NEW_USER_SUB);
     expect(insertedAccounts[0].userId).toBe(insertedUsers[0].id);
   });
 

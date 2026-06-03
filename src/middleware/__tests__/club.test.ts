@@ -73,11 +73,11 @@ function programClubLookup(identifier: string | null) {
     call += 1;
     if (call === 1) {
       return Promise.resolve(
-        identifier ? knownClubsBySlug[identifier] ?? null : null,
+        identifier ? (knownClubsBySlug[identifier] ?? null) : null,
       );
     }
     return Promise.resolve(
-      identifier ? knownClubsById[identifier] ?? null : null,
+      identifier ? (knownClubsById[identifier] ?? null) : null,
     );
   });
 }
@@ -94,8 +94,6 @@ function buildApp(opts?: { withUser?: { id: string; isSuperAdmin: boolean } }) {
     app.use("*", async (c, next) => {
       c.set("user" as never, {
         id: opts.withUser!.id,
-        auth0Id: "auth0|test",
-        role: "USER",
         isSuperAdmin: opts.withUser!.isSuperAdmin,
         name: null,
         email: null,

@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { createMiddleware } from "hono/factory";
 import { db } from "../db/index.js";
 import { accounts, users } from "../db/schema/index.js";
+import { auth } from "../lib/auth.js";
 import {
   fetchAuth0UserInfo,
   verifyAuth0Token,
@@ -10,10 +11,17 @@ import {
 
 export interface AuthUser {
   id: string;
-  auth0Id: string;
   isSuperAdmin: boolean;
   name: string | null;
   email: string | null;
+  sessionId?: string;
+}
+
+function updateLastLogin(userId: string): void {
+  void db
+    .update(users)
+    .set({ lastLoginAt: new Date() })
+    .where(eq(users.id, userId));
 }
 
 async function findOrProvisionUser(
@@ -21,7 +29,7 @@ async function findOrProvisionUser(
   accessToken: string,
 ) {
   const existing = await db.query.accounts.findFirst({
-    where: eq(accounts.providerAccountId, payload.sub),
+    where: eq(accounts.accountId, payload.sub),
     with: { users: true },
   });
 
@@ -30,6 +38,7 @@ async function findOrProvisionUser(
   // JIT provisioning: fetch profile from Auth0 and create user + account
   const userInfo = await fetchAuth0UserInfo(accessToken);
   const userId = crypto.randomUUID();
+  const accountId = crypto.randomUUID();
 
   await db.transaction(async (tx) => {
     await tx.insert(users).values({
@@ -40,10 +49,10 @@ async function findOrProvisionUser(
     });
 
     await tx.insert(accounts).values({
+      id: accountId,
+      accountId: payload.sub,
+      providerId: "auth0",
       userId,
-      type: "oauth",
-      provider: "auth0",
-      providerAccountId: payload.sub,
     });
   });
 
@@ -52,6 +61,56 @@ async function findOrProvisionUser(
   return db.query.users.findFirst({
     where: eq(users.id, userId),
   });
+}
+
+// ── better-auth path (reads Cookie header) ─────────────────────────────────
+async function resolveBetterAuthUser(
+  headers: Headers,
+): Promise<AuthUser | null> {
+  const session = await auth.api.getSession({ headers });
+  if (!session?.user) return null;
+  updateLastLogin(session.user.id);
+  const u = session.user as typeof session.user & { isSuperAdmin: boolean };
+  return {
+    id: u.id,
+    isSuperAdmin: u.isSuperAdmin,
+    name: u.name,
+    email: u.email,
+    sessionId: session.session.id,
+  };
+}
+
+// ── Auth0 path (reads Authorization: Bearer header) ─────────────────────────
+// DELETE this function and its call site after BCC migration complete
+async function resolveAuth0User(token: string): Promise<AuthUser | null> {
+  const payload = await verifyAuth0Token(token);
+  const user = await findOrProvisionUser(payload, token);
+  if (!user) return null;
+  updateLastLogin(user.id);
+  return {
+    id: user.id,
+    isSuperAdmin: user.isSuperAdmin,
+    name: user.name ?? null,
+    email: user.email,
+  };
+}
+// ── END DELETE ──────────────────────────────────────────────────────────────
+
+// ── main resolver ────────────────────────────────────────────────────────────
+async function resolveUser(
+  headers: Headers,
+  authHeader: string | undefined,
+): Promise<AuthUser | null> {
+  const fromCookie = await resolveBetterAuthUser(headers);
+  if (fromCookie) return fromCookie;
+
+  // ── DELETE block below after BCC migration ───────────────────────────────
+  if (authHeader?.startsWith("Bearer ")) {
+    return resolveAuth0User(authHeader.slice(7));
+  }
+  // ── END DELETE ───────────────────────────────────────────────────────────
+
+  return null;
 }
 
 // Required auth - returns 401 if not authenticated
@@ -82,39 +141,24 @@ export const authMiddleware = createMiddleware<{
         500,
       );
     }
-    // auth0Id sentinel: never a real Auth0 sub (those have form "auth0|...")
     c.set("user", {
       id: user.id,
-      auth0Id: "dev-skip-auth",
       isSuperAdmin: user.isSuperAdmin,
-      name: user.name,
+      name: user.name ?? null,
       email: user.email,
     });
     return next();
   }
 
-  const authHeader = c.req.header("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
-
-  const token = authHeader.slice(7);
   try {
-    const payload = await verifyAuth0Token(token);
-    const user = await findOrProvisionUser(payload, token);
-
+    const user = await resolveUser(
+      c.req.raw.headers,
+      c.req.header("Authorization"),
+    );
     if (!user) {
-      return c.json({ error: "User provisioning failed" }, 500);
+      return c.json({ error: "Unauthorized" }, 401);
     }
-
-    c.set("user", {
-      id: user.id,
-      auth0Id: payload.sub,
-      isSuperAdmin: user.isSuperAdmin,
-      name: user.name,
-      email: user.email,
-    });
-
+    c.set("user", user);
     await next();
   } catch (err) {
     console.error("Auth error:", err);
@@ -150,36 +194,23 @@ export const optionalAuth = createMiddleware<{
         500,
       );
     }
-    // auth0Id sentinel: never a real Auth0 sub (those have form "auth0|...")
     c.set("user", {
       id: user.id,
-      auth0Id: "dev-skip-auth",
       isSuperAdmin: user.isSuperAdmin,
-      name: user.name,
+      name: user.name ?? null,
       email: user.email,
     });
     return next();
   }
 
-  const authHeader = c.req.header("Authorization");
-  if (authHeader?.startsWith("Bearer ")) {
-    try {
-      const token = authHeader.slice(7);
-      const payload = await verifyAuth0Token(token);
-      const user = await findOrProvisionUser(payload, token);
-
-      if (user) {
-        c.set("user", {
-          id: user.id,
-          auth0Id: payload.sub,
-          isSuperAdmin: user.isSuperAdmin,
-          name: user.name,
-          email: user.email,
-        });
-      }
-    } catch {
-      // Ignore invalid tokens for optional auth
-    }
+  try {
+    const user = await resolveUser(
+      c.req.raw.headers,
+      c.req.header("Authorization"),
+    );
+    if (user) c.set("user", user);
+  } catch {
+    // Ignore auth errors for optional auth
   }
   await next();
 });
@@ -202,4 +233,3 @@ export function getAuthUser(c: { get: (key: "user") => AuthUser | undefined }) {
   }
   return user;
 }
-

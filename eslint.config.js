@@ -1,8 +1,8 @@
 //  @ts-check
 
 import eslint from "@eslint/js";
-import tseslint from "typescript-eslint";
 import unusedImports from "eslint-plugin-unused-imports";
+import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   eslint.configs.recommended,
@@ -11,7 +11,9 @@ export default tseslint.config(
   {
     languageOptions: {
       parserOptions: {
-        projectService: true,
+        projectService: {
+          allowDefaultProject: ["scripts/*.ts"],
+        },
         tsconfigRootDir: import.meta.dirname,
       },
     },

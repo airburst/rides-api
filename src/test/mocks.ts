@@ -54,7 +54,6 @@ export function createMockContext(overrides?: {
   headers?: Record<string, string>;
   user?: {
     id: string;
-    auth0Id: string;
     role: string;
     name: string;
     email: string;

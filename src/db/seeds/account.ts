@@ -3,5 +3,26 @@ import { accounts } from "../schema/index.js";
 import data from "./data/accounts.json" with { type: "json" };
 
 export default async function seed(db: Db) {
-  await db.insert(accounts).values(data as (typeof accounts.$inferInsert)[]);
+  const rows = data.map(
+    ({
+      id,
+      userId,
+      provider,
+      providerAccountId,
+      access_token,
+      id_token,
+      scope,
+    }) => ({
+      id,
+      userId,
+      accountId: providerAccountId,
+      providerId: provider,
+      accessToken: access_token,
+      idToken: id_token,
+      scope: scope,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }),
+  );
+  await db.insert(accounts).values(rows);
 }
