@@ -88,29 +88,24 @@ const main = async () => {
   }
   console.info("User clubs migrated", userClubsData.length);
 
-  // Accounts — transform old NextAuth shape to better-auth shape
+  // Accounts — production schema now matches better-auth shape
   const accountsRaw = await sourceDb.execute(sql`SELECT
+    id,
     user_id as "userId",
-    provider as "providerId",
-    provider_account_id as "accountId",
+    provider_id as "providerId",
+    account_id as "accountId",
     refresh_token as "refreshToken",
     access_token as "accessToken",
     id_token as "idToken",
-    scope
+    scope,
+    created_at as "createdAt",
+    updated_at as "updatedAt"
   from "accounts"`);
   if (accountsRaw.length > 0) {
-    const now = new Date();
     const accountsData = accountsRaw.map((row) => ({
-      id: crypto.randomUUID(),
-      userId: row.userId,
-      providerId: row.providerId,
-      accountId: row.accountId,
-      refreshToken: row.refreshToken ?? null,
-      accessToken: row.accessToken ?? null,
-      idToken: row.idToken ?? null,
-      scope: row.scope ?? null,
-      createdAt: now,
-      updatedAt: now,
+      ...row,
+      createdAt: new Date(row.createdAt as string),
+      updatedAt: new Date(row.updatedAt as string),
     }));
     // @ts-expect-error - data typing
     await db.insert(schema.accounts).values(accountsData);
@@ -119,7 +114,9 @@ const main = async () => {
 
   // Sessions — production sessions table is NextAuth-style (empty in practice);
   // skip rather than attempt schema transformation
-  console.info("Sessions skipped (NextAuth sessions not compatible with better-auth shape)");
+  console.info(
+    "Sessions skipped (NextAuth sessions not compatible with better-auth shape)",
+  );
 
   // Rides
   const ridesData = await sourceDb.execute(sql`SELECT
