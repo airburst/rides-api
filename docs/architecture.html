@@ -1,0 +1,1000 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rides API — Architecture</title>
+    <style>
+      :root {
+        --bg: #0f1117;
+        --panel: #171a23;
+        --panel-2: #1d212c;
+        --line: #2b303d;
+        --ink: #e7e9ee;
+        --muted: #9aa3b2;
+        --faint: #6b7384;
+
+        --indigo: #7c8cff;
+        --indigo-bg: #1b1f37;
+        --emerald: #4ad6a4;
+        --emerald-bg: #122a25;
+        --amber: #e8b765;
+        --amber-bg: #2c2415;
+        --rose: #f08aa0;
+        --rose-bg: #2c1820;
+        --sky: #5fb3e6;
+        --sky-bg: #122430;
+        --slate: #9aa3b2;
+        --slate-bg: #1a1e28;
+
+        --radius: 12px;
+        --mono:
+          ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+        --sans:
+          system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+          sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        font-family: var(--sans);
+        background: radial-gradient(
+          1200px 800px at 80% -10%,
+          #1a1f2e 0%,
+          var(--bg) 55%
+        );
+        color: var(--ink);
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: var(--indigo);
+        text-decoration: none;
+      }
+
+      .wrap {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 48px 28px 80px;
+      }
+
+      header.page {
+        margin-bottom: 12px;
+      }
+      .eyebrow {
+        font: 600 12px/1 var(--mono);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--indigo);
+      }
+      h1 {
+        font-size: 34px;
+        margin: 12px 0 8px;
+        letter-spacing: -0.02em;
+      }
+      .lede {
+        color: var(--muted);
+        font-size: 15.5px;
+        max-width: 760px;
+        margin: 0;
+      }
+
+      .changed {
+        margin: 22px 0 6px;
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+        padding: 14px 16px;
+        background: linear-gradient(90deg, var(--indigo-bg), transparent);
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--indigo);
+        border-radius: 10px;
+      }
+      .changed .tag {
+        flex: none;
+        font: 700 11px/1 var(--mono);
+        letter-spacing: 0.1em;
+        color: var(--indigo);
+        padding-top: 2px;
+        text-transform: uppercase;
+      }
+      .changed p {
+        margin: 0;
+        font-size: 14px;
+        color: var(--ink);
+      }
+      .changed code {
+        color: var(--emerald);
+      }
+      .strike {
+        color: var(--amber);
+        text-decoration: line-through;
+        text-decoration-thickness: 1.5px;
+        opacity: 0.9;
+      }
+
+      section {
+        margin-top: 52px;
+      }
+      .sec-head {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .sec-head h2 {
+        font-size: 20px;
+        margin: 0;
+        letter-spacing: -0.01em;
+      }
+      .sec-head .n {
+        font: 700 13px/1 var(--mono);
+        color: var(--bg);
+        background: var(--indigo);
+        border-radius: 6px;
+        padding: 6px 9px;
+        flex: none;
+      }
+      .sec-head .sub {
+        color: var(--muted);
+        font-size: 13px;
+        margin-left: auto;
+      }
+
+      .board {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 26px;
+      }
+
+      /* ── generic node card ── */
+      .node {
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 12px 14px;
+        min-width: 0;
+      }
+      .node .t {
+        font: 600 13.5px/1.2 var(--sans);
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .node .d {
+        font-size: 11.5px;
+        color: var(--muted);
+        margin-top: 5px;
+      }
+      .node .meta {
+        font: 500 10.5px/1.4 var(--mono);
+        color: var(--faint);
+        margin-top: 7px;
+      }
+      .node code {
+        font: 500 11px/1 var(--mono);
+        color: var(--sky);
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex: none;
+      }
+
+      .c-indigo {
+        border-color: #34406e;
+        box-shadow: inset 0 0 0 1px #2a3158;
+      }
+      .c-indigo .dot,
+      .dot.indigo {
+        background: var(--indigo);
+      }
+      .c-emerald {
+        border-color: #1f4d40;
+      }
+      .c-emerald .dot,
+      .dot.emerald {
+        background: var(--emerald);
+      }
+      .c-amber {
+        border-color: #4a3c1e;
+        background: var(--amber-bg);
+      }
+      .c-amber .dot,
+      .dot.amber {
+        background: var(--amber);
+      }
+      .c-rose .dot,
+      .dot.rose {
+        background: var(--rose);
+      }
+      .c-sky .dot,
+      .dot.sky {
+        background: var(--sky);
+      }
+      .c-slate .dot,
+      .dot.slate {
+        background: var(--slate);
+      }
+
+      .pill {
+        display: inline-block;
+        font: 600 9.5px/1 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 3px 6px;
+        border-radius: 5px;
+        vertical-align: middle;
+      }
+      .pill.new {
+        color: var(--emerald);
+        background: var(--emerald-bg);
+        border: 1px solid #1f4d40;
+      }
+      .pill.legacy {
+        color: var(--amber);
+        background: var(--amber-bg);
+        border: 1px solid #4a3c1e;
+      }
+
+      /* ── topology: 3 columns ── */
+      .topo {
+        display: grid;
+        grid-template-columns: 1fr 28px 1.5fr 28px 1fr;
+        align-items: stretch;
+        gap: 0;
+      }
+      .topo .col {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        justify-content: center;
+      }
+      .topo .arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--faint);
+      }
+      .col-label {
+        font: 600 10px/1 var(--mono);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--faint);
+        margin-bottom: 4px;
+        text-align: center;
+      }
+      .frame {
+        border: 1px dashed var(--line);
+        border-radius: 10px;
+        padding: 14px 12px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .frame > .cap {
+        font: 600 10px/1 var(--mono);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 2px;
+      }
+
+      /* ── auth flow ── */
+      .auth-grid {
+        display: grid;
+        grid-template-columns: 200px 30px 1fr;
+        gap: 0 0;
+        align-items: stretch;
+      }
+      .auth-clients {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        justify-content: center;
+      }
+      .auth-arrows {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        color: var(--faint);
+      }
+      .resolver {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px;
+        background: linear-gradient(180deg, #14171f, #12141b);
+      }
+      .resolver > .cap {
+        font: 700 11px/1 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .resolver > .cap code {
+        color: var(--indigo);
+      }
+      .steps {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 12px;
+      }
+      .step {
+        display: grid;
+        grid-template-columns: 26px 1fr;
+        gap: 12px;
+        align-items: stretch;
+      }
+      .step .rail {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .step .num {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        flex: none;
+        display: grid;
+        place-items: center;
+        font: 700 11px/1 var(--mono);
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        color: var(--muted);
+      }
+      .step.win .num {
+        background: var(--indigo);
+        color: var(--bg);
+        border-color: var(--indigo);
+      }
+      .step .stem {
+        width: 2px;
+        flex: 1;
+        background: var(--line);
+        margin-top: 2px;
+      }
+      .step:last-child .stem {
+        display: none;
+      }
+      .step .body {
+        padding-bottom: 6px;
+      }
+      .step .body .h {
+        font: 600 13.5px/1.3 var(--sans);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .step .body .h code {
+        font: 600 11.5px/1 var(--mono);
+        color: var(--sky);
+      }
+      .step .body .x {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 4px;
+      }
+      .step .body .x b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .arrowdn {
+        color: var(--faint);
+        text-align: center;
+        font-size: 14px;
+      }
+
+      /* ── pipeline ── */
+      .pipe {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: stretch;
+        gap: 0;
+      }
+      .pipe .stage {
+        flex: 1 1 0;
+        min-width: 116px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 12px;
+        background: var(--panel-2);
+        position: relative;
+      }
+      .pipe .chev {
+        flex: none;
+        width: 26px;
+        display: grid;
+        place-items: center;
+        color: var(--faint);
+      }
+      .pipe .stage .k {
+        font: 600 9px/1 var(--mono);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--faint);
+      }
+      .pipe .stage .v {
+        font: 600 13px/1.25 var(--sans);
+        margin-top: 6px;
+      }
+      .pipe .stage code {
+        font: 500 10.5px/1.3 var(--mono);
+        color: var(--sky);
+        display: block;
+        margin-top: 6px;
+        word-break: break-word;
+      }
+
+      /* ── tables / matrices ── */
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+      table.matrix {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12.5px;
+      }
+      table.matrix th,
+      table.matrix td {
+        text-align: left;
+        padding: 9px 10px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      table.matrix th {
+        font: 600 10px/1 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--faint);
+      }
+      table.matrix td:first-child {
+        font: 600 12px/1.3 var(--mono);
+        color: var(--ink);
+        white-space: nowrap;
+      }
+      table.matrix td .g {
+        color: var(--muted);
+      }
+      .role {
+        font: 600 10px/1 var(--mono);
+        padding: 2px 5px;
+        border-radius: 4px;
+      }
+      .role.pub {
+        color: var(--sky);
+        background: var(--sky-bg);
+      }
+      .role.usr {
+        color: var(--slate);
+        background: var(--slate-bg);
+      }
+      .role.adm {
+        color: var(--emerald);
+        background: var(--emerald-bg);
+      }
+      .role.sa {
+        color: var(--rose);
+        background: var(--rose-bg);
+      }
+      .role.key {
+        color: var(--amber);
+        background: var(--amber-bg);
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px 22px;
+        margin-top: 26px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+      }
+      .legend .li {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .foot {
+        margin-top: 40px;
+        font-size: 12px;
+        color: var(--faint);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 16px;
+      }
+      .foot code {
+        font-family: var(--mono);
+        color: var(--muted);
+      }
+
+      .note {
+        font-size: 12px;
+        color: var(--muted);
+        margin: 14px 2px 0;
+      }
+      .note b {
+        color: var(--ink);
+      }
+
+      @media (max-width: 860px) {
+        .topo,
+        .auth-grid {
+          grid-template-columns: 1fr;
+        }
+        .topo .arrow,
+        .auth-arrows {
+          transform: rotate(90deg);
+          height: 24px;
+        }
+        .grid2 {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media print {
+        body {
+          background: #fff;
+          color: #111;
+        }
+        .board,
+        .resolver,
+        .node,
+        .pipe .stage {
+          background: #fff;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="page">
+        <div class="eyebrow">
+          Rides API · Multi-tenant cycling-club platform
+        </div>
+        <h1>System Architecture</h1>
+        <p class="lede">
+          Hono API on Bun, deployed to an Oracle Cloud VM behind Caddy, backed
+          by Supabase Postgres via Drizzle. Every request is tenant-scoped to
+          one club. This document reflects the codebase as of the
+          <strong>Database auth</strong> change (PR&nbsp;#14).
+        </p>
+
+        <div class="changed">
+          <span class="tag">What changed</span>
+          <p>
+            Authentication moved from Auth0 JWT (JWKS bearer verification) to
+            <code>better-auth</code> — self-hosted email + password with
+            HttpOnly session cookies. The Auth0 bearer path is kept alive only
+            for the BCC cutover window and is flagged
+            <span class="pill legacy">delete after migration</span> in
+            <code>resolveUser</code>.
+          </p>
+        </div>
+      </header>
+
+      <!-- ───────────────────────── 1. TOPOLOGY ───────────────────────── -->
+      <section>
+        <div class="sec-head">
+          <span class="n">01</span>
+          <h2>Deployment topology</h2>
+          <span class="sub">edge → app → backing services</span>
+        </div>
+
+        <div class="board">
+          <div class="topo">
+            <!-- clients -->
+            <div class="col">
+              <div class="col-label">Clients</div>
+              <div class="node c-emerald">
+                <div class="t">
+                  <span class="dot emerald"></span>app.fairhursts.net (temp)
+                  <span class="pill new">new</span>
+                </div>
+                <div class="d">TanStack SPA · sends session cookie</div>
+                <div class="meta">credentials: include</div>
+              </div>
+              <div class="node c-amber">
+                <div class="t">
+                  <span class="dot amber"></span>bcc-rides.vercel.app
+                  <span class="pill legacy">legacy</span>
+                </div>
+                <div class="d">Old frontend · Auth0 bearer token</div>
+              </div>
+              <div class="node c-slate">
+                <div class="t">
+                  <span class="dot slate"></span>Cron / scripts
+                </div>
+                <div class="d">archive · generate · riderhq</div>
+                <div class="meta">Authorization: Bearer API_KEY</div>
+              </div>
+            </div>
+
+            <div class="arrow">→</div>
+
+            <!-- VM -->
+            <div class="col">
+              <div class="col-label">Oracle Cloud VM · London</div>
+              <div class="frame">
+                <span class="cap">Always-Free VM · PM2</span>
+                <div class="node c-sky">
+                  <div class="t">
+                    <span class="dot sky"></span>Caddy <code>:443</code>
+                  </div>
+                  <div class="d">TLS termination · reverse proxy → :3001</div>
+                </div>
+                <div class="arrowdn">↓</div>
+                <div class="node c-indigo">
+                  <div class="t">
+                    <span class="dot indigo"></span>Hono API <code>:3001</code>
+                  </div>
+                  <div class="d">Bun runtime · @hono/node-server</div>
+                  <div class="meta">
+                    CORS (credentials) · logger · static /avatars
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="arrow">→</div>
+
+            <!-- services -->
+            <div class="col">
+              <div class="col-label">Backing services</div>
+              <div class="node c-emerald">
+                <div class="t">
+                  <span class="dot emerald"></span>Supabase Postgres
+                </div>
+                <div class="d">Drizzle ORM · RLS enabled</div>
+              </div>
+              <div class="node c-rose">
+                <div class="t"><span class="dot rose"></span>Redis</div>
+                <div class="d">Optional cache · club-scoped keys</div>
+                <div class="meta">CACHE_ENABLED</div>
+              </div>
+              <div class="node c-sky">
+                <div class="t"><span class="dot sky"></span>Resend</div>
+                <div class="d">Verify + reset emails</div>
+                <div class="meta">EMAIL_PROVIDER = resend | console</div>
+              </div>
+              <div class="node c-amber">
+                <div class="t">
+                  <span class="dot amber"></span>Auth0 JWKS
+                  <span class="pill legacy">legacy</span>
+                </div>
+                <div class="d">JWT verification during cutover</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ───────────────────────── 2. AUTHENTICATION ───────────────────────── -->
+      <section>
+        <div class="sec-head">
+          <span class="n">02</span>
+          <h2>Authentication — dual-auth resolver</h2>
+          <span class="sub">src/middleware/auth.ts</span>
+        </div>
+
+        <div class="board">
+          <div class="auth-grid">
+            <!-- inbound credentials -->
+            <div class="auth-clients">
+              <div class="node c-emerald">
+                <div class="t"><span class="dot emerald"></span>Cookie</div>
+                <div class="d">better-auth HttpOnly session</div>
+                <div class="meta">domain .fairhursts.net</div>
+              </div>
+              <div class="node c-amber">
+                <div class="t"><span class="dot amber"></span>Bearer JWT</div>
+                <div class="d">Auth0 access token</div>
+              </div>
+              <div class="node c-amber">
+                <div class="t">
+                  <span class="dot amber"></span>Bearer API_KEY
+                </div>
+                <div class="d">Cron — checked in-route</div>
+              </div>
+            </div>
+
+            <div class="auth-arrows">→</div>
+
+            <!-- resolver -->
+            <div class="resolver">
+              <div class="cap">
+                <span class="dot indigo"></span
+                ><code>resolveUser(headers, authHeader)</code> — first match
+                wins
+              </div>
+
+              <div class="steps">
+                <div class="step">
+                  <div class="rail">
+                    <div class="num">0</div>
+                    <div class="stem"></div>
+                  </div>
+                  <div class="body">
+                    <div class="h">DEV_SKIP_AUTH bypass</div>
+                    <div class="x">
+                      Dev only — refuses unless <b>NODE_ENV=development</b>;
+                      looks up <code>DEV_SKIP_AUTH_USER</code> by email.
+                    </div>
+                  </div>
+                </div>
+
+                <div class="step win">
+                  <div class="rail">
+                    <div class="num">1</div>
+                    <div class="stem"></div>
+                  </div>
+                  <div class="body">
+                    <div class="h">
+                      <span class="dot emerald"></span>resolveBetterAuthUser
+                      <span class="pill new">primary</span>
+                    </div>
+                    <div class="x">
+                      Reads <b>Cookie</b> header →
+                      <code>auth.api.getSession()</code> →
+                      <code>sessions</code> table → user. Touches
+                      <code>lastLoginAt</code>. Returns <code>sessionId</code>.
+                    </div>
+                  </div>
+                </div>
+
+                <div class="step">
+                  <div class="rail">
+                    <div class="num">2</div>
+                    <div class="stem"></div>
+                  </div>
+                  <div class="body">
+                    <div class="h">
+                      <span class="dot amber"></span>resolveAuth0User
+                      <span class="pill legacy">delete after BCC</span>
+                    </div>
+                    <div class="x">
+                      Only if <b>Authorization: Bearer</b> present.
+                      <code>verifyAuth0Token</code> (JWKS) → JIT provision via
+                      <code>accounts.accountId = sub</code> → user.
+                    </div>
+                  </div>
+                </div>
+
+                <div class="step">
+                  <div class="rail">
+                    <div class="num">∅</div>
+                    <div class="stem"></div>
+                  </div>
+                  <div class="body">
+                    <div class="h">No match → 401 Unauthorized</div>
+                    <div class="x">
+                      <code>optionalAuth</code> swallows this and continues
+                      anonymously; <code>authMiddleware</code> rejects.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <p class="note">
+                <b>Why dual-auth:</b> cookies and bearer tokens live on
+                different headers, so the two paths never collide and neither
+                adds overhead to the other. They coexist against one DB until
+                all BCC users set passwords (batched resets via
+                <code>scripts/send-password-resets.ts</code>), then the Auth0
+                path, <code>src/lib/auth0.ts</code>, and the
+                <code>AUTH0_*</code> env vars are deleted.
+              </p>
+            </div>
+          </div>
+
+          <div class="legend">
+            <div class="li">
+              <span class="dot emerald"></span>better-auth (current)
+            </div>
+            <div class="li">
+              <span class="dot amber"></span>Auth0 / legacy — removed after
+              cutover
+            </div>
+            <div class="li">
+              <span class="dot sky"></span>API_KEY — never touches the session
+              layer
+            </div>
+            <div class="li">
+              <span class="dot indigo"></span>resolver / app logic
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ───────────────────────── 3. REQUEST LIFECYCLE ───────────────────────── -->
+      <section>
+        <div class="sec-head">
+          <span class="n">03</span>
+          <h2>Request lifecycle &amp; tenant scoping</h2>
+          <span class="sub">middleware chain per route</span>
+        </div>
+
+        <div class="board">
+          <div class="pipe">
+            <div class="stage">
+              <div class="k">Edge</div>
+              <div class="v">CORS + logger</div>
+              <code>allowlist + localhost</code>
+            </div>
+            <div class="chev">›</div>
+            <div class="stage">
+              <div class="k">Step 1 · authn</div>
+              <div class="v">optionalAuth / authMiddleware</div>
+              <code>c.set("user", …)</code>
+            </div>
+            <div class="chev">›</div>
+            <div class="stage">
+              <div class="k">Step 2 · tenant</div>
+              <div class="v">resolveClub</div>
+              <code>X-Club-Id | ?club=</code>
+            </div>
+            <div class="chev">›</div>
+            <div class="stage">
+              <div class="k">Step 3 · authz</div>
+              <div class="v">requireClubRole / requireSuperAdmin</div>
+              <code>USER · LEADER · ADMIN</code>
+            </div>
+            <div class="chev">›</div>
+            <div class="stage">
+              <div class="k">Step 4</div>
+              <div class="v">Handler → Drizzle</div>
+              <code>cache → Postgres</code>
+            </div>
+          </div>
+
+          <p class="note">
+            <b>resolveClub</b> turns <code>X-Club-Id</code> (authed; UUID or
+            slug) or <code>?club=&lt;slug&gt;</code> (public) into the active
+            club, then validates <code>user_clubs</code> membership and attaches
+            the per-club <b>role</b>. <code>is_super_admin</code> bypasses
+            membership. In compat mode a missing identifier falls back to
+            <code>DEFAULT_CLUB_SLUG</code>; <code>STRICT_TENANCY=true</code> →
+            400. Every tenant query carries
+            <code>eq(table.clubId, club.id)</code> and every cache key is
+            club-scoped.
+          </p>
+          <p class="note">
+            <b>FUTURE</b> create a subdomain per club, e.g.
+            <i>bathcc.clubrides.com</i> — the resolver would parse the subdomain
+            and skip the fallback logic entirely, since a request without a
+            subdomain would be invalid. Subject to buying a new, universal
+            domain.
+          </p>
+        </div>
+      </section>
+
+      <!-- ───────────────────────── 4. ROUTES & AUTHZ ───────────────────────── -->
+      <section>
+        <div class="sec-head">
+          <span class="n">04</span>
+          <h2>Routes &amp; authorization</h2>
+          <span class="sub">src/index.ts mounts</span>
+        </div>
+
+        <div class="board">
+          <div class="grid2">
+            <table class="matrix">
+              <thead>
+                <tr>
+                  <th>Route</th>
+                  <th>Access</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>/api/auth/**</td>
+                  <td>
+                    <span class="role pub">public</span>
+                    <span class="g">better-auth handler</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>POST /signup/club/:slug</td>
+                  <td>
+                    <span class="role pub">public</span>
+                    <span class="g">creates user + user_clubs(USER)</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>GET /rides</td>
+                  <td>
+                    <span class="role pub">public</span>
+                    <span class="g">?club= required</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>POST/PATCH /rides</td>
+                  <td><span class="role adm">LEADER / ADMIN</span></td>
+                </tr>
+                <tr>
+                  <td>/repeating-rides</td>
+                  <td><span class="role adm">club ADMIN</span></td>
+                </tr>
+              </tbody>
+            </table>
+
+            <table class="matrix">
+              <thead>
+                <tr>
+                  <th>Route</th>
+                  <th>Access</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>GET /users/me</td>
+                  <td>
+                    <span class="role usr">any authed</span>
+                    <span class="g">· no club scope</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>/users, /users/:id</td>
+                  <td><span class="role adm">self / club ADMIN</span></td>
+                </tr>
+                <tr>
+                  <td>/clubs (write)</td>
+                  <td>
+                    <span class="role sa">super-admin</span>
+                    <span class="g">/ club ADMIN</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>/generate</td>
+                  <td>
+                    <span class="role sa">super-admin</span>
+                    <span class="role key">API_KEY</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>/archive · /riderhq</td>
+                  <td><span class="role key">API_KEY only</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="note">
+            Roles live on <code>user_clubs.role</code> (per club).
+            <code>users.is_super_admin</code> is the only global authority and
+            bypasses all club checks. <code>/riderhq</code> is BCC-scoped and
+            sunsetting.
+          </p>
+        </div>
+      </section>
+
+      <div class="foot">
+        <span>Generated from source —</span>
+        <code>src/middleware/auth.ts</code>
+        <code>src/lib/auth.ts</code>
+        <code>src/routes/signup.ts</code>
+        <code>src/middleware/club.ts</code>
+        <code>src/index.ts</code>
+        <code>drizzle/0017_better_auth.sql</code>
+      </div>
+    </div>
+  </body>
+</html>
