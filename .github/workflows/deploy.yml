@@ -35,7 +35,7 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_APP_PATH: ${{ secrets.VPS_APP_PATH }}
         run: |
-          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST << 'ENDSSH'
+          ssh -i ~/.ssh/deploy_key -o ServerAliveInterval=60 -o ServerAliveCountMax=10 $VPS_USER@$VPS_HOST << 'ENDSSH'
             set -e
             echo "🚀 Starting deployment..."
 
