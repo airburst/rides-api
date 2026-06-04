@@ -25,6 +25,29 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
+    sendResetPassword: async ({ user, token }, request) => {
+      let origin = "";
+      if (request?.headers) {
+        origin =
+          request.headers.get("origin") ??
+          request.headers.get("referer")?.split("/").slice(0, 3).join("/") ??
+          "";
+      }
+      const appUrl = (origin || env("APP_URL")) ?? "http://localhost:3000";
+      const url = `${appUrl}/auth/reset-password?token=${token}`;
+      if (env("EMAIL_PROVIDER") === "resend") {
+        const resend = new Resend(env("RESEND_API_KEY"));
+        const { error } = await resend.emails.send({
+          from: env("EMAIL_FROM"),
+          to: user.email,
+          subject: "Reset your password",
+          html: `<a href="${url}">Click here to reset your password</a>`,
+        });
+        if (error) throw new Error(`Resend error: ${error.message}`);
+        return;
+      }
+      console.info(`[AUTH:RESET] ${user.email} → ${url}`);
+    },
   },
   advanced: {
     crossSubDomainCookies: {

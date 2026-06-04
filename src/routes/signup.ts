@@ -62,9 +62,9 @@ signupRouter.post("/club/:slug", async (c) => {
   }
 
   try {
-    const origin = c.req.header("origin") ?? env("APP_URL") ?? "/";
+    const origin = c.req.header("origin") ?? env("APP_URL") ?? "";
     await auth.api.signUpEmail({
-      body: { email, password, name, callbackURL: origin },
+      body: { email, password, name, callbackURL: `${origin}/auth/verified` },
       headers: c.req.raw.headers,
     });
   } catch (e) {

@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.3.1
+
+### Patch Changes
+
+- Add routes for password reset and change callback for verified email
+
 ## 2.3.0
 
 ### Minor Changes
