@@ -1,11 +1,13 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { Resend } from "resend";
 import { db } from "../db/index.js";
 import * as schema from "../db/schema/index.js";
+import { env } from "./env.js";
 
 export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL,
-  secret: process.env.BETTER_AUTH_SECRET,
+  baseURL: env("BETTER_AUTH_URL"),
+  secret: env("BETTER_AUTH_SECRET"),
   database: drizzleAdapter(db, {
     provider: "pg",
     schema: {
@@ -26,10 +28,10 @@ export const auth = betterAuth({
   },
   advanced: {
     crossSubDomainCookies: {
-      enabled: Boolean(process.env.COOKIE_DOMAIN),
-      domain: process.env.COOKIE_DOMAIN,
+      enabled: Boolean(env("COOKIE_DOMAIN")),
+      domain: env("COOKIE_DOMAIN"),
     },
-    useSecureCookies: process.env.NODE_ENV === "production",
+    useSecureCookies: env("NODE_ENV") === "production",
   },
   account: {
     accountLinking: {
@@ -47,13 +49,22 @@ export const auth = betterAuth({
     },
   },
   emailVerification: {
-    sendVerificationEmail: ({ user, url }) => {
-      if (process.env.EMAIL_PROVIDER === "resend") {
-        // TODO: wire up Resend before BCC cutover
-        return Promise.reject(new Error("Resend not yet configured"));
+    sendOnSignUp: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      if (env("EMAIL_PROVIDER") === "resend") {
+        const resend = new Resend(env("RESEND_API_KEY"));
+        const { error } = await resend.emails.send({
+          from: env("EMAIL_FROM"),
+          to: user.email,
+          subject: "Verify your email",
+          html: `<a href="${url}">Click here to verify your email</a>`,
+        });
+        if (error) {
+          throw new Error(`Resend error: ${error.message}`);
+        }
+        return;
       }
       console.info(`[AUTH:VERIFY] ${user.email} → ${url}`);
-      return Promise.resolve();
     },
   },
 });

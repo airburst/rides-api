@@ -4,6 +4,7 @@ import { z } from "zod";
 import { db } from "../db/index.js";
 import { clubs, userClubs, users } from "../db/schema/index.js";
 import { auth } from "../lib/auth.js";
+import { env } from "../lib/env.js";
 
 export const signupRouter = new Hono();
 
@@ -61,11 +62,13 @@ signupRouter.post("/club/:slug", async (c) => {
   }
 
   try {
+    const origin = c.req.header("origin") ?? env("APP_URL") ?? "/";
     await auth.api.signUpEmail({
-      body: { email, password, name },
+      body: { email, password, name, callbackURL: origin },
       headers: c.req.raw.headers,
     });
-  } catch {
+  } catch (e) {
+    console.error("[SIGNUP] signUpEmail failed:", e);
     return c.json({ error: "Signup failed" }, 500);
   }
 

@@ -5,6 +5,7 @@ import sharp from "sharp";
 import { z } from "zod";
 import { db } from "../db/index.js";
 import { clubs, userClubs, users } from "../db/schema/index.js";
+import { env } from "../lib/env.js";
 import {
   authMiddleware,
   getAuthUser,
@@ -66,8 +67,7 @@ usersRouter.get("/me", authMiddleware, async (c) => {
     const identifier =
       c.req.header("X-Club-Id") ??
       c.req.query("club") ??
-      process.env.DEFAULT_CLUB_SLUG ??
-      "bcc";
+      env("DEFAULT_CLUB_SLUG");
     const activeClub = await db.query.clubs.findFirst({
       where: isUuid(identifier)
         ? or(eq(clubs.slug, identifier), eq(clubs.id, identifier))

@@ -4,6 +4,7 @@ import { db } from "../db/index.js";
 import { accounts, repeatingRides, rides } from "../db/schema/index.js";
 import { verifyAuth0Token } from "../lib/auth0.js";
 import { cacheInvalidatePattern } from "../lib/cache.js";
+import { env } from "../lib/env.js";
 import {
   filterExistingRides,
   makeRidesInPeriod,
@@ -93,7 +94,7 @@ const createRidesFromSet = async (
 // Auth: API_KEY (for cron jobs) or user JWT with ADMIN role (for client)
 generateRouter.post("/", async (c) => {
   const authHeader = c.req.header("Authorization");
-  const apiKey = process.env.API_KEY;
+  const apiKey = env("API_KEY");
 
   // Check for API key auth (cron jobs)
   const isApiKeyAuth = authHeader === `Bearer ${apiKey}`;

@@ -1,8 +1,9 @@
 import { createClient } from "redis";
+import { env } from "./env.js";
 
-const REDIS_URL = process.env.REDIS_URL ?? "redis://localhost:6379";
-const CACHE_ENABLED = process.env.CACHE_ENABLED === "true";
-const CACHE_TTL = Number.parseInt(process.env.CACHE_TTL ?? "300", 10);
+const REDIS_URL = env("REDIS_URL");
+const CACHE_ENABLED = env("CACHE_ENABLED");
+const CACHE_TTL = env("CACHE_TTL");
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let redisClient: any = null;

@@ -8,6 +8,7 @@ import {
   verifyAuth0Token,
   type Auth0TokenPayload,
 } from "../lib/auth0.js";
+import { env } from "../lib/env.js";
 
 export interface AuthUser {
   id: string;
@@ -118,14 +119,14 @@ export const authMiddleware = createMiddleware<{
   Variables: { user: AuthUser };
 }>(async (c, next) => {
   // dev-only auth bypass — refuses to operate in production
-  if (process.env.DEV_SKIP_AUTH === "true") {
-    if (process.env.NODE_ENV !== "development") {
+  if (env("DEV_SKIP_AUTH")) {
+    if (env("NODE_ENV") !== "development") {
       return c.json(
         { error: "DEV_SKIP_AUTH is only allowed when NODE_ENV=development" },
         500,
       );
     }
-    const email = process.env.DEV_SKIP_AUTH_USER;
+    const email = env("DEV_SKIP_AUTH_USER");
     if (!email) {
       return c.json(
         { error: "DEV_SKIP_AUTH_USER is required when DEV_SKIP_AUTH=true" },
@@ -171,14 +172,14 @@ export const optionalAuth = createMiddleware<{
   Variables: { user?: AuthUser };
 }>(async (c, next) => {
   // dev-only auth bypass — refuses to operate in production
-  if (process.env.DEV_SKIP_AUTH === "true") {
-    if (process.env.NODE_ENV !== "development") {
+  if (env("DEV_SKIP_AUTH")) {
+    if (env("NODE_ENV") !== "development") {
       return c.json(
         { error: "DEV_SKIP_AUTH is only allowed when NODE_ENV=development" },
         500,
       );
     }
-    const email = process.env.DEV_SKIP_AUTH_USER;
+    const email = env("DEV_SKIP_AUTH_USER");
     if (!email) {
       return c.json(
         { error: "DEV_SKIP_AUTH_USER is required when DEV_SKIP_AUTH=true" },

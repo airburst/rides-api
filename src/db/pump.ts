@@ -1,19 +1,11 @@
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
+import { env } from "../lib/env.js";
 import * as schema from "./schema/index.js";
 
 const main = async () => {
-  const sourceUrl = process.env.SOURCE_URL;
-  const dbUrl = process.env.DATABASE_URL;
-
-  if (!sourceUrl) {
-    console.error("SOURCE_URL environment variable is required");
-    process.exit(1);
-  }
-  if (!dbUrl) {
-    console.error("DATABASE_URL environment variable is required");
-    process.exit(1);
-  }
+  const sourceUrl = env("SOURCE_URL");
+  const dbUrl = env("DATABASE_URL");
 
   const sourceDb = drizzle(sourceUrl, { schema, casing: "snake_case" });
   const db = drizzle(dbUrl, { schema, casing: "snake_case" });

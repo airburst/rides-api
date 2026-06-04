@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.3.0
+
+### Minor Changes
+
+- Add resend email verification on signup
+
 ## 2.2.0
 
 ### Minor Changes

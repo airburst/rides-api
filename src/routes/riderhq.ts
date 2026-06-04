@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db/index.js";
 import { clubs, memberships } from "../db/schema/index.js";
+import { env } from "../lib/env.js";
 
 export const riderhqRouter = new Hono();
 
@@ -64,22 +65,15 @@ const convertMembers = (members: MemberData[]): Member[] =>
 // POST /riderhq - Sync members from RiderHQ (API_KEY auth for cron jobs)
 riderhqRouter.post("/", async (c) => {
   const authHeader = c.req.header("Authorization");
-  const apiKey = process.env.API_KEY;
+  const apiKey = env("API_KEY");
 
   if (authHeader !== `Bearer ${apiKey}`) {
     return c.json({ success: false, message: "Unauthorized" }, 401);
   }
 
-  const riderhqUrl = process.env.RIDERHQ_URL;
-  const accountId = process.env.RIDERHQ_ACCOUNT_ID;
-  const privateKey = process.env.RIDERHQ_PRIVATE_KEY;
-
-  if (!riderhqUrl || !accountId || !privateKey) {
-    return c.json(
-      { success: false, message: "RiderHQ configuration missing" },
-      500,
-    );
-  }
+  const riderhqUrl = env("RIDERHQ_URL");
+  const accountId = env("RIDERHQ_ACCOUNT_ID");
+  const privateKey = env("RIDERHQ_PRIVATE_KEY");
 
   const Authorization = `Basic ${Buffer.from(
     `${accountId}:${privateKey}`,

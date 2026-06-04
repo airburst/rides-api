@@ -7,6 +7,7 @@ import pkg from "../package.json" with { type: "json" };
 import { sqlClient } from "./db/index.js";
 import { auth } from "./lib/auth.js";
 import { closeRedisConnection, getRedisClient } from "./lib/cache.js";
+import { env } from "./lib/env.js";
 import { archiveRouter } from "./routes/archive.js";
 import { clubsRouter } from "./routes/clubs.js";
 import { generateRouter } from "./routes/generate.js";
@@ -31,7 +32,7 @@ app.use(
       if (allowed.includes(origin)) return origin;
       // Any localhost port in development (vite may pick 3000, 3001, 3003, ...).
       if (
-        process.env.NODE_ENV === "development" &&
+        env("NODE_ENV") === "development" &&
         /^http:\/\/localhost:\d+$/.test(origin)
       ) {
         return origin;
@@ -74,7 +75,7 @@ app.get("/health", async (c) => {
     timestamp: new Date().toISOString(),
     version: pkg.version,
     cache: {
-      enabled: process.env.CACHE_ENABLED === "true",
+      enabled: env("CACHE_ENABLED"),
       redis: redisStatus,
     },
   });
@@ -89,7 +90,7 @@ app.onError((err, c) => {
   return c.json({ error: "Internal server error" }, 500);
 });
 
-const port = process.env.PORT ? parseInt(process.env.PORT) : 3001;
+const port = env("PORT");
 const server = serve({ fetch: app.fetch, port, hostname: "0.0.0.0" });
 
 console.info(`Starting server on port ${port}...`);

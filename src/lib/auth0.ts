@@ -1,13 +1,8 @@
 import * as jose from "jose";
+import { env } from "./env.js";
 
-const AUTH0_DOMAIN = process.env.AUTH0_DOMAIN;
-const AUTH0_AUDIENCE = process.env.AUTH0_AUDIENCE;
-
-if (!AUTH0_DOMAIN || !AUTH0_AUDIENCE) {
-  throw new Error(
-    "AUTH0_DOMAIN and AUTH0_AUDIENCE environment variables are required",
-  );
-}
+const AUTH0_DOMAIN = env("AUTH0_DOMAIN");
+const AUTH0_AUDIENCE = env("AUTH0_AUDIENCE");
 
 // Cache JWKS to avoid fetching on every request
 let jwks: jose.JWTVerifyGetKey | null = null;

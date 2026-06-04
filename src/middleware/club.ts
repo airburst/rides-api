@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { createMiddleware } from "hono/factory";
 import { db } from "../db/index.js";
 import { clubs, userClubs, type Role } from "../db/schema/index.js";
+import { env } from "../lib/env.js";
 import type { AuthUser } from "./auth.js";
 
 export interface ClubContext {
@@ -10,11 +11,11 @@ export interface ClubContext {
   role: Role;
 }
 
-const DEFAULT_CLUB_SLUG = process.env.DEFAULT_CLUB_SLUG ?? "bcc";
+const DEFAULT_CLUB_SLUG = env("DEFAULT_CLUB_SLUG");
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const isStrictTenancy = () => process.env.STRICT_TENANCY === "true";
+const isStrictTenancy = () => env("STRICT_TENANCY");
 const isUuid = (value: string) => UUID_REGEX.test(value);
 
 async function findClubById(id: string) {

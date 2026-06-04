@@ -8,13 +8,14 @@ import {
   userOnRides,
 } from "../db/schema/index.js";
 import { cacheInvalidatePattern } from "../lib/cache.js";
+import { env } from "../lib/env.js";
 
 export const archiveRouter = new Hono();
 
 // POST /archive - Archive old rides (API_KEY auth for cron jobs)
 archiveRouter.post("/", async (c) => {
   const authHeader = c.req.header("Authorization");
-  const apiKey = process.env.API_KEY;
+  const apiKey = env("API_KEY");
 
   if (authHeader !== `Bearer ${apiKey}`) {
     return c.json({ success: false, message: "Unauthorized" }, 401);

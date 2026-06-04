@@ -1,21 +1,14 @@
 import { drizzle } from "drizzle-orm/postgres-js";
+import { env } from "../lib/env.js";
 import * as schema from "./schema/index.js";
 import * as seeds from "./seeds/index.js";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL not found in environment");
-}
-
-if (!process.env.DB_SEEDING) {
+if (!env("DB_SEEDING")) {
   throw new Error('You must set DB_SEEDING to "true" when running seeds');
 }
 
 const main = async () => {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL environment variable is required");
-  }
-
-  const db = drizzle(process.env.DATABASE_URL, {
+  const db = drizzle(env("DATABASE_URL"), {
     schema,
     casing: "snake_case",
   });
