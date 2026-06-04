@@ -5,6 +5,18 @@ import { db } from "../db/index.js";
 import * as schema from "../db/schema/index.js";
 import { env } from "./env.js";
 
+const includeLocalhostTrustedOrigin =
+  env("NODE_ENV") === "development" || env("ALLOW_LOCALHOST_ORIGIN_IN_PROD");
+
+const trustedOrigins = [
+  "https://app.fairhursts.net",
+  "https://bcc-rides.vercel.app",
+];
+
+if (includeLocalhostTrustedOrigin) {
+  trustedOrigins.unshift("http://localhost:3000");
+}
+
 export const auth = betterAuth({
   baseURL: env("BETTER_AUTH_URL"),
   secret: env("BETTER_AUTH_SECRET"),
@@ -17,11 +29,7 @@ export const auth = betterAuth({
       verification: schema.verification,
     },
   }),
-  trustedOrigins: [
-    "http://localhost:3000",
-    "https://app.fairhursts.net",
-    "https://bcc-rides.vercel.app",
-  ],
+  trustedOrigins,
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,

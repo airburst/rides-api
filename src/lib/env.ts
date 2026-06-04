@@ -42,6 +42,7 @@ const schema = {
   STRICT_TENANCY:      { type: "boolean", default: false },
   DEV_SKIP_AUTH:       { type: "boolean", default: false },
   DB_SEEDING:          { type: "boolean", default: false },
+  ALLOW_LOCALHOST_ORIGIN_IN_PROD: { type: "boolean", default: false },
 } as const satisfies Record<string, EnvDef>;
 
 export function env<K extends keyof typeof schema>(key: K): Infer<(typeof schema)[K]> {

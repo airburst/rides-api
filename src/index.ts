@@ -25,16 +25,15 @@ app.use(
   "*",
   cors({
     origin: (origin) => {
+      const isLocalhostOrigin = /^http:\/\/localhost:\d+$/.test(origin);
+      const allowLocalhostInProd = env("ALLOW_LOCALHOST_ORIGIN_IN_PROD");
       const allowed = [
         "https://bcc-rides.vercel.app",
         "https://app.fairhursts.net",
       ];
       if (allowed.includes(origin)) return origin;
-      // Any localhost port in development (vite may pick 3000, 3001, 3003, ...).
-      if (
-        env("NODE_ENV") === "development" &&
-        /^http:\/\/localhost:\d+$/.test(origin)
-      ) {
+      // Any localhost port in development. In production this is explicit opt-in.
+      if (isLocalhostOrigin && (env("NODE_ENV") === "development" || allowLocalhostInProd)) {
         return origin;
       }
       // Allow Vercel preview deployments
