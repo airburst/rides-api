@@ -4,18 +4,7 @@ import { Resend } from "resend";
 import { db } from "../db/index.js";
 import * as schema from "../db/schema/index.js";
 import { env } from "./env.js";
-
-const includeLocalhostTrustedOrigin =
-  env("NODE_ENV") === "development" || env("ALLOW_LOCALHOST_ORIGIN_IN_PROD");
-
-const trustedOrigins = [
-  "https://app.fairhursts.net",
-  "https://bcc-rides.vercel.app",
-];
-
-if (includeLocalhostTrustedOrigin) {
-  trustedOrigins.unshift("http://localhost:3000");
-}
+import { trustedOrigins } from "./origins.js";
 
 export const auth = betterAuth({
   baseURL: env("BETTER_AUTH_URL"),

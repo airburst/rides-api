@@ -1,5 +1,13 @@
 # Change Log
 
+## 2.3.5
+
+### Patch Changes
+
+- Refactor CORS and Better Auth trusted origins to use a shared origin policy helper.
+
+  Add wildcard support for subdomains under `*.clubrides.app` while keeping existing Vercel preview and localhost opt-in behavior intact.
+
 ## 2.3.4
 
 ### Patch Changes

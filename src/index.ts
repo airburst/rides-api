@@ -1,6 +1,6 @@
-import { config } from "dotenv";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
+import { config } from "dotenv";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
@@ -9,8 +9,7 @@ import { sqlClient } from "./db/index.js";
 import { auth } from "./lib/auth.js";
 import { closeRedisConnection, getRedisClient } from "./lib/cache.js";
 import { env } from "./lib/env.js";
-
-config();
+import { isAllowedOrigin } from "./lib/origins.js";
 import { archiveRouter } from "./routes/archive.js";
 import { clubsRouter } from "./routes/clubs.js";
 import { generateRouter } from "./routes/generate.js";
@@ -20,6 +19,8 @@ import { ridesRouter } from "./routes/rides.js";
 import { signupRouter } from "./routes/signup.js";
 import { usersRouter } from "./routes/users.js";
 
+config();
+
 const app = new Hono();
 
 // Middleware
@@ -28,28 +29,7 @@ app.use(
   "*",
   cors({
     origin: (origin) => {
-      // Production: explicit allowlist
-      const allowed = [
-        "https://bcc-rides.vercel.app",
-        "https://app.fairhursts.net",
-      ];
-      if (allowed.includes(origin)) return origin;
-
-      // Development: localhost
-      const isLocalhostOrigin = /^http:\/\/localhost:\d+$/.test(origin);
-      if (env("NODE_ENV") === "development" && isLocalhostOrigin) {
-        return origin;
-      }
-
-      // Vercel preview deployments
-      if (
-        /^https:\/\/bcc-rides-.*-airbursts-projects\.vercel\.app$/.test(origin)
-      ) {
-        return origin;
-      }
-
-      // Block unknown origins
-      return null;
+      return isAllowedOrigin(origin) ? origin : null;
     },
     credentials: true,
   }),
