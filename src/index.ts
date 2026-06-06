@@ -64,9 +64,9 @@ app.route("/riderhq", riderhqRouter);
 
 // Health check
 app.get("/health", async (c) => {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+   
   const redisClient = await getRedisClient();
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+   
   const redisStatus = redisClient?.isOpen ? "connected" : "disconnected";
 
   return c.json({
