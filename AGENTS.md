@@ -83,11 +83,24 @@ Production secrets are stored in GitHub Environment settings:
 - `VPS_HOST`
 - `VPS_USER`
 
-## Database Migrations
+## Database Changes
+
+When planning or implementing **any** database change — schema design, migrations, query authoring, index creation, RLS, or Postgres performance tuning — activate the Supabase skills in `.agents/skills/` before proceeding:
+
+| Skill                              | Location                                                   | When to use                                                                               |
+| ---------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `supabase`                         | `.agents/skills/supabase/SKILL.md`                         | Any Supabase product: schema changes, migrations, Auth, RLS, extensions, CLI              |
+| `supabase-postgres-best-practices` | `.agents/skills/supabase-postgres-best-practices/SKILL.md` | Writing or reviewing SQL queries, indexes, schema design, connection pooling, performance |
+
+**Claude Code**: invoke via `/supabase` or `.agents:supabase` and `.agents:supabase-postgres-best-practices` skills.
+
+**GitHub Copilot / VS Code agents**: reference `.agents/skills/supabase/SKILL.md` and `.agents/skills/supabase-postgres-best-practices/SKILL.md` before generating any database-related code.
+
+### Migrations
 
 - Use `bun run db:migrate` (not `db:push` - drizzle-kit has bugs with push)
 - Always add `IF NOT EXISTS` to migration SQL
-- Test migrations locally before pushing
+- Test migrations locally before pushing to Supabase
 
 ## Bun-Specific Notes
 
