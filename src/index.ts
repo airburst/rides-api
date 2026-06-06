@@ -1,3 +1,4 @@
+import { config } from "dotenv";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { Hono } from "hono";
@@ -8,6 +9,8 @@ import { sqlClient } from "./db/index.js";
 import { auth } from "./lib/auth.js";
 import { closeRedisConnection, getRedisClient } from "./lib/cache.js";
 import { env } from "./lib/env.js";
+
+config();
 import { archiveRouter } from "./routes/archive.js";
 import { clubsRouter } from "./routes/clubs.js";
 import { generateRouter } from "./routes/generate.js";

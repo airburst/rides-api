@@ -19,14 +19,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Download build artifacts
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          name: dist
-          path: dist/
-          workflow: ci.yml
-          branch: main
-
       - name: Setup SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
@@ -36,10 +28,6 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H $VPS_HOST >> ~/.ssh/known_hosts
-
-      - name: Copy built files to VPS
-        run: |
-          rsync -avz --delete -e "ssh -i ~/.ssh/deploy_key" dist/ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:${{ secrets.VPS_APP_PATH }}/dist/
 
       - name: Deploy to VPS
         env:
@@ -52,9 +40,13 @@ jobs:
             echo "🚀 Starting deployment..."
             cd ${{ secrets.VPS_APP_PATH }}
 
-            # Pull latest code (for config/schema updates)
+            # Pull latest code
             echo "📥 Pulling latest code..."
             git pull origin main
+
+            # Install dependencies
+            echo "📦 Installing dependencies..."
+            /home/ubuntu/.bun/bin/bun install --production
 
             # Run database migrations
             echo "🗄️  Running database migrations..."
