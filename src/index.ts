@@ -25,27 +25,27 @@ app.use(
   "*",
   cors({
     origin: (origin) => {
-      if (!origin) return "*";
-      const isLocalhostOrigin = /^http:\/\/localhost:\d+$/.test(origin);
-      const allowLocalhostInProd = env("ALLOW_LOCALHOST_ORIGIN_IN_PROD");
+      // Production: explicit allowlist
       const allowed = [
         "https://bcc-rides.vercel.app",
         "https://app.fairhursts.net",
       ];
       if (allowed.includes(origin)) return origin;
-      // Any localhost port in development. In production this is explicit opt-in.
-      if (
-        isLocalhostOrigin &&
-        (env("NODE_ENV") === "development" || allowLocalhostInProd)
-      ) {
+
+      // Development: localhost
+      const isLocalhostOrigin = /^http:\/\/localhost:\d+$/.test(origin);
+      if (env("NODE_ENV") === "development" && isLocalhostOrigin) {
         return origin;
       }
-      // Allow Vercel preview deployments
+
+      // Vercel preview deployments
       if (
         /^https:\/\/bcc-rides-.*-airbursts-projects\.vercel\.app$/.test(origin)
       ) {
         return origin;
       }
+
+      // Block unknown origins
       return null;
     },
     credentials: true,
