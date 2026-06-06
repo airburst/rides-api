@@ -25,6 +25,7 @@ app.use(
   "*",
   cors({
     origin: (origin) => {
+      if (!origin) return "*";
       const isLocalhostOrigin = /^http:\/\/localhost:\d+$/.test(origin);
       const allowLocalhostInProd = env("ALLOW_LOCALHOST_ORIGIN_IN_PROD");
       const allowed = [
@@ -33,7 +34,10 @@ app.use(
       ];
       if (allowed.includes(origin)) return origin;
       // Any localhost port in development. In production this is explicit opt-in.
-      if (isLocalhostOrigin && (env("NODE_ENV") === "development" || allowLocalhostInProd)) {
+      if (
+        isLocalhostOrigin &&
+        (env("NODE_ENV") === "development" || allowLocalhostInProd)
+      ) {
         return origin;
       }
       // Allow Vercel preview deployments
@@ -64,9 +68,8 @@ app.route("/riderhq", riderhqRouter);
 
 // Health check
 app.get("/health", async (c) => {
-   
   const redisClient = await getRedisClient();
-   
+
   const redisStatus = redisClient?.isOpen ? "connected" : "disconnected";
 
   return c.json({
