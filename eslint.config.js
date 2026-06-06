@@ -23,6 +23,7 @@ export default tseslint.config(
       "*.config.js",
       "*.config.ts",
       "*.config.cjs",
+      "*.config.mjs",
       "dist/",
       "node_modules/",
       "**/__tests__/**",

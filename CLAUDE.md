@@ -6,8 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 bun run dev             # hot-reload dev server
-bun run build           # tsc compile to dist/
-bun run start           # run compiled output
+bun run build           # type-check/build artifact (not required for prod runtime)
+bun run start           # run API directly from src/index.ts
 bun test                # run all tests
 bun test src/routes/__tests__/authorization.test.ts  # run single test file
 bun run lint            # eslint --fix

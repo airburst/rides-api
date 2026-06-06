@@ -201,7 +201,7 @@ Automated via GitHub Actions:
 1. Push to `main` branch
 2. CI runs (lint, test, type-check, build)
 3. If CI passes, deploy workflow triggers
-4. SSH to VPS, pull code, install deps, migrate, build, reload PM2
+4. SSH to VPS, pull code, install deps, migrate, reload PM2
 
 ### Manual Deployment (Emergency)
 
@@ -209,10 +209,9 @@ Automated via GitHub Actions:
 ssh ubuntu@143.47.251.53
 cd ~/rides-api
 git pull
-bun install
-bun run db:migrate
-bun run build
-pm2 reload ecosystem.config.cjs
+/home/ubuntu/.bun/bin/bun install --production
+/home/ubuntu/.bun/bin/bun run db:migrate
+pm2 reload rides-api --update-env
 ```
 
 ## Questions?

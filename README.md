@@ -235,7 +235,7 @@ CACHE_TTL=300
 After updating `.env`, reload the API:
 
 ```bash
-pm2 reload ecosystem.config.cjs
+pm2 reload ecosystem.config.mjs
 ```
 
 ### Cache Performance
