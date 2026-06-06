@@ -72,11 +72,25 @@ jobs:
             echo "🎉 Deployment complete!"
           ENDSSH
 
+      - name: Verify App Status
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_APP_PATH: ${{ secrets.VPS_APP_PATH }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o ServerAliveInterval=60 $VPS_USER@$VPS_HOST << 'ENDSSH'
+            echo "🔍 Checking PM2 status..."
+            pm2 status rides-api
+            echo ""
+            echo "📋 Last 20 lines of logs..."
+            pm2 logs rides-api --lines 20 --nostream
+          ENDSSH
+
       - name: Health Check
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
         run: |
-          sleep 5
+          sleep 10
           curl -f http://$VPS_HOST:3001/health || exit 1
           echo "✅ Health check passed!"
 
