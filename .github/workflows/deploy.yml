@@ -40,6 +40,17 @@ jobs:
             echo "🚀 Starting deployment..."
             cd ${{ secrets.VPS_APP_PATH }}
 
+            # Clean up known stale local files created during manual hotfixes.
+            # These can block git pull with: "untracked working tree files would be overwritten".
+            if [ -f ecosystem.config.mjs ] && ! git ls-files --error-unmatch ecosystem.config.mjs >/dev/null 2>&1; then
+              echo "🧹 Removing stale untracked ecosystem.config.mjs"
+              rm -f ecosystem.config.mjs
+            fi
+            if [ -f ecosystem.config.cjs ] && ! git ls-files --error-unmatch ecosystem.config.cjs >/dev/null 2>&1; then
+              echo "🧹 Removing stale untracked ecosystem.config.cjs"
+              rm -f ecosystem.config.cjs
+            fi
+
             # Pull latest code
             echo "📥 Pulling latest code..."
             git pull origin main
