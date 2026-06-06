@@ -30,6 +30,20 @@ export const auth = betterAuth({
     },
   }),
   trustedOrigins,
+  rateLimit: {
+    enabled: true,
+    storage: "secondary-storage", // Uses Redis if available, falls back to database
+    customRules: {
+      "/api/auth/sign-in/email": {
+        window: 60, // 1 minute window
+        max: 5, // 5 attempts per minute
+      },
+      "/api/auth/sign-up/email": {
+        window: 60, // 1 minute window
+        max: 3, // 3 attempts per minute (stricter than signin)
+      },
+    },
+  },
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
