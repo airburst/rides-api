@@ -130,7 +130,10 @@ export const accounts = createTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => [t.index("account_user_id_idx").on(table.userId)],
+  (table) => [
+    t.index("account_user_id_idx").on(table.userId),
+    t.index("accounts_account_id_idx").on(table.accountId),
+  ],
 );
 
 export const rides = createTable(
