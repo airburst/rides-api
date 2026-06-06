@@ -32,6 +32,13 @@ app.use(
       return isAllowedOrigin(origin) ? origin : null;
     },
     credentials: true,
+    allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Club-Id",
+      "X-Auth-Origin",
+    ],
   }),
 );
 
