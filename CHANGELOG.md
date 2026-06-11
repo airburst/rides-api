@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.3.6
+
+### Patch Changes
+
+- Add user_clubs entry for Auth0 signups
+
 ## 2.3.5
 
 ### Patch Changes

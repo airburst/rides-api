@@ -21,6 +21,7 @@ const main = async () => {
     schema.userOnRides,
     schema.rides,
     schema.repeatingRides,
+    schema.memberships,
     schema.userClubs,
     schema.users,
     schema.clubs,
@@ -79,6 +80,30 @@ const main = async () => {
     await db.insert(schema.userClubs).values(userClubsData);
   }
   console.info("User clubs migrated", userClubsData.length);
+
+  // Memberships (RiderHQ membership rows — referenced by clubs FK)
+  const membershipsData = await sourceDb.execute(sql`select
+    system,
+    member_id as "memberId",
+    club_id as "clubId",
+    user_id as "userId",
+    handle,
+    is_user as "isUser",
+    firstnames,
+    lastname,
+    email,
+    expires,
+    is_verified as "isVerified",
+    is_guest as "isGuest"
+  from "memberships"`);
+  if (membershipsData.length > 0) {
+    membershipsData.forEach((row) => {
+      if (row.clubId === "bcc") row.clubId = BCC_UUID;
+    });
+    // @ts-expect-error - data typing
+    await db.insert(schema.memberships).values(membershipsData);
+  }
+  console.info("Memberships migrated", membershipsData.length);
 
   // Accounts — production schema now matches better-auth shape
   const accountsRaw = await sourceDb.execute(sql`SELECT

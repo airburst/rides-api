@@ -32,10 +32,10 @@ const existingUser = {
 
 const mockInsert = mock((table: any) => ({
   values: mock((data: any) => {
-    // Distinguish users vs accounts by presence of 'providerId' field
     if (data.providerId) {
       insertedAccounts.push(data);
-    } else {
+    } else if (!data.clubId) {
+      // clubId present means it's a userClubs insert — skip
       insertedUsers.push(data);
     }
     return Promise.resolve();
@@ -73,6 +73,9 @@ const mockDbQuery = {
       }
       return Promise.resolve(null);
     }),
+  },
+  clubs: {
+    findFirst: mock(() => Promise.resolve({ id: "bcc-club-id", slug: "bcc" })),
   },
 };
 
@@ -143,6 +146,7 @@ beforeEach(() => {
   mockFetchAuth0UserInfo.mockClear();
   mockDbQuery.accounts.findFirst.mockClear();
   mockDbQuery.users.findFirst.mockClear();
+  mockDbQuery.clubs.findFirst.mockClear();
   mockInsert.mockClear();
   mockDb.transaction.mockClear();
 });

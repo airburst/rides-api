@@ -1,12 +1,12 @@
 import { eq } from "drizzle-orm";
 import { createMiddleware } from "hono/factory";
 import { db } from "../db/index.js";
-import { accounts, users } from "../db/schema/index.js";
+import { accounts, clubs, userClubs, users } from "../db/schema/index.js";
 import { auth } from "../lib/auth.js";
 import {
-  fetchAuth0UserInfo,
-  verifyAuth0Token,
-  type Auth0TokenPayload,
+    fetchAuth0UserInfo,
+    verifyAuth0Token,
+    type Auth0TokenPayload,
 } from "../lib/auth0.js";
 import { env } from "../lib/env.js";
 
@@ -36,10 +36,20 @@ async function findOrProvisionUser(
 
   if (existing?.users) return existing.users;
 
-  // JIT provisioning: fetch profile from Auth0 and create user + account
+  // JIT provisioning: fetch profile from Auth0 and create user + account.
+  // All Auth0 users are members of the default BCC club — better-auth signups
+  // get user_clubs via the /signup/club/:slug route; Auth0 has no equivalent
+  // hand-off, so we create the membership here.
   const userInfo = await fetchAuth0UserInfo(accessToken);
   const userId = crypto.randomUUID();
   const accountId = crypto.randomUUID();
+
+  const bccClub = await db.query.clubs.findFirst({
+    where: eq(clubs.slug, "bcc"),
+  });
+  if (!bccClub) {
+    throw new Error("Default BCC club not found — cannot provision Auth0 user");
+  }
 
   await db.transaction(async (tx) => {
     await tx.insert(users).values({
@@ -54,6 +64,12 @@ async function findOrProvisionUser(
       accountId: payload.sub,
       providerId: "auth0",
       userId,
+    });
+
+    await tx.insert(userClubs).values({
+      userId,
+      clubId: bccClub.id,
+      role: "USER",
     });
   });
 
