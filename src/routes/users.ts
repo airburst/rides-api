@@ -1,4 +1,4 @@
-import { and, asc, eq, ilike, inArray, or } from "drizzle-orm";
+import { and, asc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { join } from "node:path";
 import sharp from "sharp";
@@ -23,6 +23,8 @@ interface Vars {
   user?: AuthUser;
   club: ClubContext;
 }
+
+const isSqliteDialect = env("DB_DIALECT") === "sqlite";
 
 export const usersRouter = new Hono<{ Variables: Vars }>();
 
@@ -123,12 +125,18 @@ usersRouter.get("/", requireAuth, requireClubRole("ADMIN"), async (c) => {
     let result;
     if (query) {
       const lowerQuery = `%${query.toLowerCase()}%`;
+      const sqliteWhere = and(
+        inArray(users.id, memberIds),
+        sql`(lower(${users.name}) like ${lowerQuery} or lower(${users.email}) like ${lowerQuery})`,
+      );
+      const postgresWhere = and(
+        inArray(users.id, memberIds),
+        or(ilike(users.name, lowerQuery), ilike(users.email, lowerQuery)),
+      );
+
       result = await db.query.users.findMany({
         columns: baseColumns,
-        where: and(
-          inArray(users.id, memberIds),
-          or(ilike(users.name, lowerQuery), ilike(users.email, lowerQuery)),
-        ),
+        where: isSqliteDialect ? sqliteWhere : postgresWhere,
         orderBy: [asc(users.name)],
       });
     } else {

@@ -48,6 +48,8 @@ Configure your environment variables:
 ```bash
 # Database
 DATABASE_URL=postgres://user:password@host:5432/database
+DB_DIALECT=postgres
+SQLITE_DB_PATH=./data/rides.sqlite
 
 # Auth0
 AUTH0_DOMAIN=your-tenant.auth0.com
@@ -77,6 +79,12 @@ REDIS_URL=redis://localhost:6379
 CACHE_ENABLED=true
 CACHE_TTL=300
 ```
+
+Dialect notes:
+
+- `DB_DIALECT=postgres` (default) uses `DATABASE_URL`
+- `DB_DIALECT=sqlite` uses `SQLITE_DB_PATH` and enables SQLite WAL mode
+- Keep Postgres as baseline while building and benchmarking the SQLite candidate
 
 ### 4. Redis Setup (Optional)
 

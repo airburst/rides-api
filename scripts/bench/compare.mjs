@@ -19,6 +19,8 @@ function fmt(value) {
 }
 
 function gateForScenario(base, cand) {
+  const baselineSucceeded = base.failures === 0;
+  const candidateSucceeded = cand.failures === 0;
   const p50Ok = cand.latency.p50Ms <= base.latency.p50Ms;
   const p95Ok = cand.latency.p95Ms <= base.latency.p95Ms;
   const errorOk = cand.errorRate <= base.errorRate;
@@ -31,11 +33,20 @@ function gateForScenario(base, cand) {
 
   const rpsOk = cand.requestsPerSecond >= base.requestsPerSecond;
 
-  const pass = p50Ok && p95Ok && p99Ok && errorOk && rpsOk;
+  const pass =
+    baselineSucceeded &&
+    candidateSucceeded &&
+    p50Ok &&
+    p95Ok &&
+    p99Ok &&
+    errorOk &&
+    rpsOk;
 
   return {
     pass,
     checks: {
+      baselineSucceeded,
+      candidateSucceeded,
       p50Ok,
       p95Ok,
       p99Ok,
@@ -99,6 +110,12 @@ function main() {
 
     console.info(`Scenario: ${baseScenario.scenario}`);
     console.info(`  pass: ${String(gate.pass)}`);
+    console.info(
+      `  baseline succeeded: ${String(gate.checks.baselineSucceeded)}`,
+    );
+    console.info(
+      `  candidate succeeded: ${String(gate.checks.candidateSucceeded)}`,
+    );
     console.info(`  p50 delta: ${fmt(gate.deltas.p50Ms)}`);
     console.info(`  p95 delta: ${fmt(gate.deltas.p95Ms)}`);
     console.info(`  p99 delta: ${fmt(gate.deltas.p99Ms)}`);

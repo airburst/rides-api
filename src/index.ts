@@ -5,7 +5,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import pkg from "../package.json" with { type: "json" };
-import { sqlClient } from "./db/index.js";
+import { closeDbConnection } from "./db/index.js";
 import { auth } from "./lib/auth.js";
 import { closeRedisConnection, getRedisClient } from "./lib/cache.js";
 import { env } from "./lib/env.js";
@@ -92,7 +92,7 @@ async function shutdown() {
   console.info("Shutting down...");
   server.close();
   await closeRedisConnection();
-  await sqlClient.end();
+  await closeDbConnection();
   console.info("Shutdown complete");
   process.exit(0);
 }

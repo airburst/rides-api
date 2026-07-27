@@ -71,3 +71,4 @@ See 04-benchmark-and-cost-gate.md for acceptance thresholds and measurement meth
 - 04-benchmark-and-cost-gate.md
 - 05-benchmark-harness-plan.md
 - 06-sqlite-candidate-execution-checklist.md
+- 07-local-benchmark-findings.md

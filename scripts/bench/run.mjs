@@ -45,12 +45,14 @@ function buildHeaders(scenario, env) {
   };
 
   if (scenario.auth === "bearer") {
-    if (!env.bearerToken) {
+    if (!env.bearerToken && !env.allowDevAuthBypass) {
       throw new Error(
-        `Scenario ${scenario.name} requires BENCH_BEARER_TOKEN but it is not set`,
+        `Scenario ${scenario.name} requires BENCH_BEARER_TOKEN unless BENCH_ALLOW_DEV_AUTH_BYPASS=true is set`,
       );
     }
-    headers.Authorization = `Bearer ${env.bearerToken}`;
+    if (env.bearerToken) {
+      headers.Authorization = `Bearer ${env.bearerToken}`;
+    }
   }
 
   if (scenario.auth === "apiKey") {
@@ -66,7 +68,13 @@ function buildHeaders(scenario, env) {
 }
 
 function canRunScenario(scenario, env) {
-  if (scenario.auth === "bearer" && !env.bearerToken) return false;
+  if (
+    scenario.auth === "bearer" &&
+    !env.bearerToken &&
+    !env.allowDevAuthBypass
+  ) {
+    return false;
+  }
   if (scenario.auth === "apiKey" && !env.apiKey) return false;
   return true;
 }
@@ -156,6 +164,7 @@ async function run() {
     clubId: process.env.BENCH_CLUB_ID ?? "bcc",
     bearerToken: process.env.BENCH_BEARER_TOKEN,
     apiKey: process.env.BENCH_API_KEY,
+    allowDevAuthBypass: process.env.BENCH_ALLOW_DEV_AUTH_BYPASS === "true",
     rideId: process.env.BENCH_RIDE_ID ?? "replace-me",
     outputDir: process.env.BENCH_OUTPUT_DIR ?? "artifacts/bench",
     label: process.env.BENCH_LABEL ?? "bench-run",
