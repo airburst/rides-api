@@ -1,0 +1,63 @@
+{
+  "meta": {
+    "description": "Default benchmark scenarios for rides-api",
+    "warmupRequests": 50,
+    "measuredRequests": 300,
+    "concurrency": 20
+  },
+  "scenarios": [
+    {
+      "name": "rides_list",
+      "enabled": true,
+      "method": "GET",
+      "path": "/rides?start=2026-01-01&end=2026-12-31",
+      "auth": "none"
+    },
+    {
+      "name": "ride_detail",
+      "enabled": true,
+      "method": "GET",
+      "path": "/rides/{rideId}",
+      "auth": "none"
+    },
+    {
+      "name": "users_search",
+      "enabled": true,
+      "method": "GET",
+      "path": "/users?q=a",
+      "auth": "bearer"
+    },
+    {
+      "name": "ride_join",
+      "enabled": false,
+      "method": "POST",
+      "path": "/rides/{rideId}/join",
+      "auth": "bearer",
+      "body": {}
+    },
+    {
+      "name": "ride_leave",
+      "enabled": false,
+      "method": "POST",
+      "path": "/rides/{rideId}/leave",
+      "auth": "bearer",
+      "body": {}
+    },
+    {
+      "name": "generate",
+      "enabled": false,
+      "method": "POST",
+      "path": "/generate",
+      "auth": "apiKey",
+      "body": {}
+    },
+    {
+      "name": "archive",
+      "enabled": false,
+      "method": "POST",
+      "path": "/archive",
+      "auth": "apiKey",
+      "body": {}
+    }
+  ]
+}

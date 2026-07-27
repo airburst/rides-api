@@ -1,0 +1,57 @@
+{
+  "createdAt": "2026-07-27T20:41:15.980Z",
+  "label": "postgres-baseline",
+  "configPath": "/Users/mark/dev/rides-api/scripts/bench/scenarios.default.json",
+  "environment": {
+    "baseUrl": "http://localhost:3001",
+    "clubId": "bcc",
+    "timeoutMs": 10000,
+    "warmupRequests": 50,
+    "measuredRequests": 300,
+    "concurrency": 20
+  },
+  "results": [
+    {
+      "scenario": "rides_list",
+      "method": "GET",
+      "path": "/rides?start=2026-01-01&end=2026-12-31",
+      "requests": 300,
+      "failures": 0,
+      "errorRate": 0,
+      "requestsPerSecond": 777.934913427189,
+      "totalMs": 385.636375,
+      "latency": {
+        "minMs": 10.465791999999993,
+        "maxMs": 35.618667000000016,
+        "p50Ms": 25.126499999999965,
+        "p95Ms": 31.228499999999997,
+        "p99Ms": 34.39949999999999,
+        "avgMs": 25.085633490000017
+      },
+      "statusCounts": {
+        "200": 300
+      }
+    },
+    {
+      "scenario": "ride_detail",
+      "method": "GET",
+      "path": "/rides/{rideId}",
+      "requests": 300,
+      "failures": 0,
+      "errorRate": 0,
+      "requestsPerSecond": 1656.7815897634496,
+      "totalMs": 181.07395799999995,
+      "latency": {
+        "minMs": 7.437666999999919,
+        "maxMs": 19.320457999999917,
+        "p50Ms": 11.567125000000033,
+        "p95Ms": 15.755415999999968,
+        "p99Ms": 16.820834000000104,
+        "avgMs": 11.902391923333328
+      },
+      "statusCounts": {
+        "200": 300
+      }
+    }
+  ]
+}
