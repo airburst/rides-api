@@ -69,3 +69,5 @@ See 04-benchmark-and-cost-gate.md for acceptance thresholds and measurement meth
 - 02-tenant-routing-contract.md
 - 03-migration-risk-register.md
 - 04-benchmark-and-cost-gate.md
+- 05-benchmark-harness-plan.md
+- 06-sqlite-candidate-execution-checklist.md

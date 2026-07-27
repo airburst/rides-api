@@ -197,3 +197,7 @@ After initial scaffolding, add:
 - query timing export from DB layer
 - CPU/memory snapshot capture during runs
 - monthly cost model calculator from measured infra profile
+
+Execution tracking and ownership are captured in:
+
+- 06-sqlite-candidate-execution-checklist.md
