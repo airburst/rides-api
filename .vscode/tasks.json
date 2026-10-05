@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Incident development environment",
+			"type": "shell",
+			"command": "bun run incident:dev",
+			"isBackground": true,
+			"problemMatcher": []
+		}
+	]
+}

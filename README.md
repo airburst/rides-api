@@ -140,6 +140,34 @@ The API will be available at `http://localhost:3001`
 - `bun run format` - Format code with Prettier
 - `bun run check-types` - TypeScript type checking
 
+### Local End-To-End Tests
+
+With Bun, Node, a running Docker daemon, and the `rides` frontend checked out
+beside this repository:
+
+```bash
+./bin/e2e
+./bin/e2e --grep 'browser retry'
+```
+
+The runner installs locked dependencies and Playwright Chromium, creates a
+disposable local PostgreSQL database, applies migrations, starts both servers,
+and runs the repeating-ride tests. It removes its database container and volume
+on success, failure, or interruption. Ports 3000 and 3101 must be free; existing
+servers are not reused or stopped. Existing databases and production settings
+are not used. Failure screenshots and traces remain in `test-results/`.
+
+After a forced termination or machine restart, remove leftover test containers:
+
+```bash
+./bin/e2e-cleanup
+```
+
+Cleanup targets only containers labelled `clubrides.e2e=true`; do not run it
+while an e2e run is active. `bun run test:e2e` remains available for an already
+prepared local test database. See the [incident report](docs/repeating-ride-incident-2026-10-05.md)
+for the original failure and detailed test coverage.
+
 ### Database
 
 - `bun run db:generate` - Generate Drizzle migrations

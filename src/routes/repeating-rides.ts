@@ -3,6 +3,8 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { db } from "../db/index.js";
 import { repeatingRides, rides } from "../db/schema/index.js";
+import { cacheInvalidatePattern, clubCachePattern } from "../lib/cache.js";
+import { makeRidesInPeriod } from "../lib/rrule-utils.js";
 import {
   optionalAuth,
   requireAuth,
@@ -13,8 +15,12 @@ import {
   resolveClub,
   type ClubContext,
 } from "../middleware/club.js";
+import { createRidesFromSet } from "./generate.js";
 
-interface Vars { user?: AuthUser; club: ClubContext }
+interface Vars {
+  user?: AuthUser;
+  club: ClubContext;
+}
 
 export const repeatingRidesRouter = new Hono<{ Variables: Vars }>();
 
@@ -132,6 +138,61 @@ repeatingRidesRouter.post(
     } catch (error) {
       console.error("Create repeating ride error:", error);
       return c.json({ error: "Failed to create repeating ride" }, 500);
+    }
+  },
+);
+
+repeatingRidesRouter.post(
+  "/:id/generate",
+  requireAuth,
+  requireClubRole("ADMIN"),
+  async (c) => {
+    const club = c.get("club");
+    const id = c.req.param("id");
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid request body" }, 400);
+    }
+    const result = z
+      .object({
+        date: z.union([z.iso.date(), z.iso.datetime({ offset: true })]),
+      })
+      .strict()
+      .safeParse(body);
+    if (!result.success) {
+      return c.json(
+        { error: "Validation failed", details: z.treeifyError(result.error) },
+        400,
+      );
+    }
+    try {
+      const template = await db.query.repeatingRides.findFirst({
+        where: and(
+          eq(repeatingRides.id, id),
+          eq(repeatingRides.clubId, club.id),
+        ),
+      });
+      if (!template) {
+        return c.json({ error: "Repeating ride not found" }, 404);
+      }
+      const generated = await createRidesFromSet(
+        makeRidesInPeriod(template, result.data.date),
+        club.id,
+      );
+      if (generated.error) {
+        return c.json({ success: false, error: generated.error }, 500);
+      }
+      void cacheInvalidatePattern(clubCachePattern(club.id));
+      return c.json({
+        success: true,
+        generateFromDate: result.data.date,
+        results: [generated],
+      });
+    } catch (error) {
+      console.error("Generate repeating ride instances error:", error);
+      return c.json({ success: false, error: "Failed to generate rides" }, 500);
     }
   },
 );
