@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+containers="$(docker ps --all --quiet --filter "label=clubrides.e2e=true")"
+while IFS= read -r container; do
+  if [[ -n "$container" ]]; then
+    docker rm --force --volumes "$container"
+  fi
+done <<< "$containers"

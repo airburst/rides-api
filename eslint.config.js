@@ -28,6 +28,7 @@ export default tseslint.config(
       "node_modules/",
       "**/__tests__/**",
       "src/test/**",
+      "e2e/**",
     ],
   },
   {

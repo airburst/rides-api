@@ -63,7 +63,7 @@ const mockDbQuery = {
     findMany: mock(() => Promise.resolve([] as any[])),
   },
   repeatingRides: {
-    findFirst: mock(() => Promise.resolve(null as any)),
+    findFirst: mock((_options?: any) => Promise.resolve(null as any)),
     findMany: mock(() => Promise.resolve([] as any[])),
   },
   clubs: {
@@ -1099,6 +1099,98 @@ describe("🔐 Authorization Tests (CRITICAL)", () => {
   });
 
   describe("Generate Route - API Key or super-admin", () => {
+    describe("POST /repeating-rides/:id/generate", () => {
+      const requestGeneration = (
+        token?: string,
+        body: unknown = { date: "2026-10-15" },
+      ) =>
+        app.request("/repeating-rides/test-schedule-id/generate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(body),
+        });
+
+      test("rejects guests", async () => {
+        expect((await requestGeneration()).status).toBe(401);
+      });
+      for (const role of ["USER", "LEADER"] as const) {
+        test(`rejects ${role}`, async () => {
+          expect((await requestGeneration(TEST_TOKENS[role])).status).toBe(403);
+        });
+      }
+      for (const role of ["ADMIN", "SUPERADMIN"] as const) {
+        test(`allows ${role} to generate instances for the active club`, async () => {
+          mockDbQuery.repeatingRides.findFirst.mockResolvedValue({
+            id: "test-schedule-id",
+            clubId: TEST_CLUB.id,
+            name: "Bath Hills and Hops",
+            schedule:
+              "DTSTART:20261015T181500Z\nRRULE:FREQ=WEEKLY;BYDAY=TH;UNTIL=20270330T000000Z",
+          });
+          const response = await requestGeneration(TEST_TOKENS[role]);
+          expect(response.status).toBe(200);
+          const data = await response.json();
+          expect(data.success).toBe(true);
+          expect(data.results[0].count).toBe(7);
+          expect(data.results[0].scheduleId).toBe("test-schedule-id");
+          const predicate =
+            mockDbQuery.repeatingRides.findFirst.mock.calls.at(-1)?.[0]?.where;
+          expect(predicate).toBeDefined();
+        });
+      }
+      test("returns 404 when no template exists in the active club", async () => {
+        mockDbQuery.repeatingRides.findFirst.mockResolvedValue(null);
+        expect((await requestGeneration(TEST_TOKENS.ADMIN)).status).toBe(404);
+      });
+      for (const body of [
+        {},
+        { date: "invalid" },
+        { date: "2026-02-30" },
+        { date: "2026-10-15", scheduleId: "other-template" },
+      ]) {
+        test(`rejects invalid input ${JSON.stringify(body)}`, async () => {
+          expect(
+            (await requestGeneration(TEST_TOKENS.ADMIN, body)).status,
+          ).toBe(400);
+        });
+      }
+    });
+
+    test("reproduces template creation succeeding while global generation denies a club admin", async () => {
+      mockDb.transaction.mockClear();
+      const headers = {
+        Authorization: `Bearer ${TEST_TOKENS.ADMIN}`,
+        "Content-Type": "application/json",
+      };
+      const created = await app.request("/repeating-rides", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          name: "Bath Hills and Hops",
+          schedule:
+            "DTSTART:20261015T181500Z\nRRULE:FREQ=WEEKLY;INTERVAL=1;BYDAY=TH;UNTIL=20270330T000000Z",
+          winterStartTime: "18:15",
+          distance: 25,
+        }),
+      });
+      expect(created.status).toBe(201);
+      const { id } = await created.json();
+      const generated = await app.request("/generate", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ scheduleId: id, date: "2026-10-15" }),
+      });
+      expect(generated.status).toBe(403);
+      expect(await generated.json()).toEqual({
+        success: false,
+        message: "Forbidden",
+      });
+      expect(mockDb.transaction).not.toHaveBeenCalled();
+    });
+
     describe("POST /generate - Generate rides from templates", () => {
       test("rejects guests (401)", async () => {
         const response = await app.request("/generate", {

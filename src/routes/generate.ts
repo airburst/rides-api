@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { db } from "../db/index.js";
 import { accounts, repeatingRides, rides } from "../db/schema/index.js";
@@ -27,7 +27,7 @@ interface GenerateResult {
 // so a deliberately-removed ride is never resurrected — is skipped. Running
 // /generate repeatedly (cron + manual, overlapping windows) therefore never
 // creates duplicates. The check + insert run in one transaction.
-const createRidesFromSet = async (
+export const createRidesFromSet = async (
   { id, rides: rideList }: RideSet,
   clubId: string,
 ): Promise<GenerateResult> => {
@@ -37,6 +37,11 @@ const createRidesFromSet = async (
 
   try {
     return await db.transaction(async (tx) => {
+      if (id) {
+        await tx.execute(
+          sql`select pg_advisory_xact_lock(hashtextextended(${`${clubId}:${id}`}, 0))`,
+        );
+      }
       // Find which candidate occurrences already exist for this schedule.
       // NOTE: intentionally NOT filtered by `deleted` — a soft-deleted ride
       // still counts as "exists" so we never resurrect a deliberately-removed
