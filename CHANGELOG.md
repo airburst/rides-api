@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.3.7
+
+### Patch Changes
+
+- 6a4b6fb: Fix club-admin repeating ride generation with a tenant-scoped endpoint, serialize concurrent generation retries, and add disposable local Playwright coverage with setup and teardown scripts.
+
 ## 2.3.6
 
 ### Patch Changes
