@@ -37,11 +37,11 @@ interface RideSet {
   rides: TemplateRide[];
 }
 
-// Check if date is in winter (Nov-Feb)
+// Check if date is in winter (Dec-Feb)
 export const isWinter = (dateString: string): boolean => {
   const date = new Date(dateString);
   const month = date.getMonth();
-  return month >= 10 || month < 2; // Nov=10, Dec=11, Jan=0, Feb=1
+  return month >= 11 || month < 2; // Dec=11, Jan=0, Feb=1
 };
 
 // Change time for winter rides

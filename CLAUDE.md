@@ -72,7 +72,7 @@ Request → CORS → Logger → optionalAuth/authMiddleware → resolveClub → 
 - **`import type`** enforced by `consistent-type-imports` rule.
 - **Unused vars**: prefix with `_` to suppress lint warning.
 - **Test mocking order**: `mock.module()` must be called BEFORE importing routes. Authorization tests use dynamic `await import(...)` after mocks are set up.
-- **Winter time**: repeating rides have a `winterStartTime` (HH:MM) that overrides start time Nov-Feb, applied in `rrule-utils.ts`.
+- **Winter time**: repeating rides have a `winterStartTime` (HH:MM) that overrides start time Dec-Feb, applied in `rrule-utils.ts`.
 
 ## See also
 

@@ -151,7 +151,7 @@ describe("RRule Utilities", () => {
       }
     });
 
-    test("applies winter time in November", () => {
+    test("does NOT apply winter time in November", () => {
       const template = createTemplate({
         schedule: "FREQ=WEEKLY;BYDAY=SA;DTSTART=20261101T090000",
         winterStartTime: "08:00",
@@ -163,7 +163,7 @@ describe("RRule Utilities", () => {
       expect(firstRide).toBeDefined();
       if (firstRide) {
         const rideDate = new Date(firstRide.rideDate);
-        expect(rideDate.getUTCHours()).toBe(8);
+        expect(rideDate.getUTCHours()).toBe(9);
       }
     });
 
@@ -406,8 +406,16 @@ describe("RRule Utilities", () => {
       expect(isWinter("2023-10-15T10:00:00.000Z")).toBe(false);
     });
 
-    test("returns true for November", () => {
-      expect(isWinter("2023-11-15T10:00:00.000Z")).toBe(true);
+    test("returns false for November", () => {
+      expect(isWinter("2023-11-15T10:00:00.000Z")).toBe(false);
+    });
+
+    test("returns false for 30 November", () => {
+      expect(isWinter("2023-11-30T10:00:00.000Z")).toBe(false);
+    });
+
+    test("returns true for 1 December", () => {
+      expect(isWinter("2023-12-01T10:00:00.000Z")).toBe(true);
     });
 
     test("returns true for December", () => {
