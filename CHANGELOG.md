@@ -1,5 +1,11 @@
 # Change Log
 
+## 2.3.8
+
+### Patch Changes
+
+- 1d0db1b: Winter start time now applies 1 Dec to end Feb (was Nov-Feb)
+
 ## 2.3.7
 
 ### Patch Changes
